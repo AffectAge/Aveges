@@ -15,5 +15,9 @@
   "required_pollution": {
   },
   "required_stability": {
+  },
+  "state_required_buildings": {
+  },
+  "province_required_buildings": {
   }
 }
