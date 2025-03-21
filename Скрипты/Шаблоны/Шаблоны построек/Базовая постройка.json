@@ -1,0 +1,19 @@
+{
+  "name": "Базовая постройка",
+  "required_landscapes": {
+  },
+  "required_planet": {
+  },
+  "required_culture": {
+  },
+  "required_religion": {
+  },
+  "required_climate": {
+  },
+  "required_radiation": {
+  },
+  "required_pollution": {
+  },
+  "required_stability": {
+  }
+}

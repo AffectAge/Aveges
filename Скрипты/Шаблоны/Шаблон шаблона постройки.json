@@ -1,0 +1,44 @@
+{
+  "name": "Кристаллический Храм",
+  "required_landscapes": {
+    "AND": [
+      "равнина",
+      { "OR": ["побережье", "оазис"] }
+    ]
+  },
+  "required_planet": {
+    "NOT": [
+      { "OR": ["Марс", "Вулканус"] }
+    ]
+  },
+  "required_culture": {
+    "OR": [
+      { "AND": ["мистическая", "духовная"] },
+      "светлая"
+    ]
+  },
+  "required_religion": {
+    "NOT": ["технокульт"]
+  },
+  "required_climate": {
+    "XOR": ["континентальный", "арктический"]
+  },
+  "required_radiation": {
+    "AND": [
+      { "LESS_THAN": 30 },
+      { "NOT": { "LESS_THAN": 5 } }
+    ]
+  },
+  "required_pollution": {
+    "OR": [
+      { "LESS_THAN": 20 },
+      { "BETWEEN": [50, 70] }
+    ]
+  },
+  "required_stability": {
+    "AND": [
+      { "GREATER_THAN": 60 },
+      { "NOT": { "GREATER_THAN": 95 } }
+    ]
+  }
+}

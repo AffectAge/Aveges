@@ -1,0 +1,12 @@
+{
+  "id": "prov_002",
+  "owner": "Украина",
+  "landscapes": ["равнина", "побережье"],
+  "planet": "Земля",
+  "province_culture": ["экологическая", "научная"],
+  "province_religion": ["светопоклонство"],          
+  "province_climate": ["умеренный"],      
+  "province_radiation": 18,               
+  "province_pollution": 35,              
+  "province_stability": 80
+}
