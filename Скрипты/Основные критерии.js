@@ -34,7 +34,7 @@ function formatCriteria(condition) {
     if (Array.isArray(operand)) {
   // Специальный случай для BETWEEN с двумя значениями
   if (operator === "BETWEEN" && operand.length === 2) {
-    return `от ${operand[0]} до ${operand[1]}`;
+    return `от 📊 ${operand[0]} до 📊 ${operand[1]}`;
   }
 
   const formattedOperands = operand.map(item => formatCriteria(item));
@@ -53,19 +53,19 @@ function formatCriteria(condition) {
       // Если операнд не массив, форматируем его рекурсивно
       const formattedOperand = formatCriteria(operand);
       if (operator === "NOT") {
-        return "не " + formattedOperand;
+        return "не 📊 " + formattedOperand;
       } else if (operator === "GREATER_THAN") {
-        return "больше " + formattedOperand;
+        return "больше 📊 " + formattedOperand;
       } else if (operator === "LESS_THAN") {
-        return "меньше " + formattedOperand;
+        return "меньше 📊 " + formattedOperand;
       } else if (operator === "EQUAL_TO") {
-        return "равно " + formattedOperand;
+        return "равно 📊 " + formattedOperand;
       } else if (operator === "GREATER_OR_EQUAL_TO") {
-        return "не меньше " + formattedOperand;
+        return "не меньше 📊 " + formattedOperand;
       } else if (operator === "LESS_OR_EQUAL_TO") {
-        return "не больше " + formattedOperand;
+        return "не больше 📊 " + formattedOperand;
       } else if (operator === "BETWEEN" && Array.isArray(operand) && operand.length === 2) {
-        return `от ${operand[0]} до ${operand[1]}`;
+        return `от 📊 ${operand[0]} до 📊 ${operand[1]}`;
       }
       return operator + " " + formattedOperand;
     }
