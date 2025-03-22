@@ -22,7 +22,7 @@ function formatProvinceCriteriaPretty(criteria) {
           let reqs = [];
           for (const building in value) {
             if (value.hasOwnProperty(building)) {
-              reqs.push(`минимум ${value[building]} шт. «${building}»`);
+              reqs.push(`требуется минимум 📊 ${value[building]} 🏭 ${building}`);
             }
           }
           parts.push(reqs.join(" и "));
@@ -34,7 +34,7 @@ function formatProvinceCriteriaPretty(criteria) {
           let reqs = [];
           for (const building in value) {
             if (value.hasOwnProperty(building)) {
-              reqs.push(`не более ${value[building]} шт. «${building}»`);
+              reqs.push(`не более 📊 ${value[building]} 🏭 ${building}`);
             }
           }
           parts.push(reqs.join(" и "));
@@ -47,7 +47,7 @@ function formatProvinceCriteriaPretty(criteria) {
             .map(sub => formatProvinceCriteriaPretty(sub))
             .filter(x => x !== "");
           if (subparts.length > 0) {
-            parts.push(subparts.join("; "));
+            parts.push(subparts.join("\n ➤ "));
           }
         }
         break;
@@ -58,7 +58,7 @@ function formatProvinceCriteriaPretty(criteria) {
             .map(sub => formatProvinceCriteriaPretty(sub))
             .filter(x => x !== "");
           if (subparts.length > 0) {
-            parts.push(`либо (${subparts.join(" или ")})`);
+            parts.push(`либо ${subparts.join(" или ")}`);
           }
         }
         break;
@@ -69,20 +69,20 @@ function formatProvinceCriteriaPretty(criteria) {
             .map(sub => formatProvinceCriteriaPretty(sub))
             .filter(x => x !== "");
           if (subparts.length > 0) {
-            parts.push(`отсутствие (${subparts.join(" или ")})`);
+            parts.push(`отсутствие ${subparts.join(" или ")}`);
           }
         }
         break;
       
       case "XNOR":
         if (Array.isArray(value) && value.length === 2) {
-          parts.push(`«${value[0]}» и «${value[1]}» должны присутствовать либо вместе, либо отсутствовать вместе`);
+          parts.push(`🏭 ${value[0]} и 🏭 ${value[1]} должны присутствовать либо вместе, либо отсутствовать вместе`);
         }
         break;
       
       case "IMPLIES":
         if (Array.isArray(value) && value.length === 2) {
-          parts.push(`если присутствует «${value[0]}», то должно быть «${value[1]}»`);
+          parts.push(`если присутствует 🏭 ${value[0]}, то должно быть 🏭 ${value[1]}`);
         }
         break;
       
@@ -242,6 +242,11 @@ function updateProvinceRequiredBuildings(data, spreadsheet) {
       const template = templateInfo.data;
       const templateName = template.name;
       const provinceCriteria = template.province_required_buildings;
+	  
+	  if (typeof provinceCriteria === 'object' && provinceCriteria !== null && Object.keys(provinceCriteria).length === 0) {
+        newMessages.push(`✅ [Постройки][Необходимые постройки в провинции] Постройка 🏭 ${templateName} подходит для всех провинций, так как у неё нет требований к постройкам в провинции.\n`);
+        return;
+}
       
       if (typeof provinceCriteria !== 'object' || provinceCriteria === null) {
         newMessages.push(`❗ [Ошибка][updateProvinceRequiredBuildings] Шаблон "${templateName}" имеет некорректные критерии в "province_required_buildings".`);
@@ -254,13 +259,13 @@ function updateProvinceRequiredBuildings(data, spreadsheet) {
       
       stateProvinces.forEach(provinceId => {
         const counts = buildingCountsByProvince[provinceId] || {};
-        if (evaluateCriteria(provinceCriteria, counts)) {
+        if (evaluateProvinceCriteria(provinceCriteria, counts)) {
           matchingProvincesState.push(provinceId);
         }
       });
       otherProvinces.forEach(provinceId => {
         const counts = buildingCountsByProvince[provinceId] || {};
-        if (evaluateCriteria(provinceCriteria, counts)) {
+        if (evaluateProvinceCriteria(provinceCriteria, counts)) {
           matchingProvincesOthers.push(provinceId);
         }
       });
@@ -270,7 +275,7 @@ function updateProvinceRequiredBuildings(data, spreadsheet) {
       
       // Если ни одна провинция не соответствует критериям, выводим подробное сообщение
       if (matchingProvincesState.length === 0 && matchingProvincesOthers.length === 0) {
-        newMessages.push(`🚫 [Постройки][Необходимые постройки в провинции] Шаблон "${templateName}" не имеет ни одной провинции, удовлетворяющей требованиям: ${criteriaDescription} ❌.`);
+        newMessages.push(`❌ [Постройки][Необходимые постройки в провинции] Шаблон 🏭 ${templateName} не соответствует требованиям: \n ➤ ${criteriaDescription} \n`);
       }
       
       // Если уже существуют привязанные провинции, сравниваем их с новыми значениями
@@ -281,13 +286,13 @@ function updateProvinceRequiredBuildings(data, spreadsheet) {
       if (provincesToRemoveState.length > 0) {
         template.matching_provinces_state = currentMatchingState.filter(id => matchingProvincesState.includes(id));
         const provinceList = provincesToRemoveState.join(', ');
-        newMessages.push(`🗺️ [Постройки][Провинции] Наши провинции (${provinceList}) больше не подходят для "${templateName}" из-за несоответствия требованиям: ${criteriaDescription} 🧹.`);
+        newMessages.push(`🗺️ Провинции нашего государства 📌 ${removedProvinces} больше не подходят для постройки 🏭 ${templateName} 🧹.`);
       }
       const provincesToRemoveOthers = currentMatchingOthers.filter(id => !matchingProvincesOthers.includes(id));
       if (provincesToRemoveOthers.length > 0) {
         template.matching_provinces_others = currentMatchingOthers.filter(id => matchingProvincesOthers.includes(id));
         const provinceList = provincesToRemoveOthers.join(', ');
-        newMessages.push(`🌐 [Постройки][Провинции] Провинции других стран (${provinceList}) больше не подходят для "${templateName}" из-за несоответствия требованиям: ${criteriaDescription} 🧹.`);
+        newMessages.push(`🌐 Провинции других стран 📌 ${removedProvinces} больше не подходят для постройки 🏭 ${templateName} 🧹.`);
       }
       
       // Обновление шаблона в data
@@ -311,7 +316,7 @@ function updateProvinceRequiredBuildings(data, spreadsheet) {
  * @param {Object} buildingCounts - Объект с количеством построек по типам в провинции
  * @returns {Boolean} - Возвращает true, если провинция соответствует критериям (или критерии отсутствуют), иначе false
  */
-function evaluateCriteria(criteria, buildingCounts) {
+function evaluateProvinceCriteria(criteria, buildingCounts) {
   if (typeof criteria !== 'object' || criteria === null || Object.keys(criteria).length === 0) {
     return true;
   }
@@ -321,13 +326,13 @@ function evaluateCriteria(criteria, buildingCounts) {
     switch (operator) {
       case 'AND':
         if (!Array.isArray(value)) return false;
-        return value.every(sub => evaluateCriteria(sub, buildingCounts));
+        return value.every(sub => evaluateProvinceCriteria(sub, buildingCounts));
       case 'OR':
         if (!Array.isArray(value)) return false;
-        return value.some(sub => evaluateCriteria(sub, buildingCounts));
+        return value.some(sub => evaluateProvinceCriteria(sub, buildingCounts));
       case 'NOT':
         if (!Array.isArray(value)) return false;
-        return !value.some(sub => evaluateCriteria(sub, buildingCounts));
+        return !value.some(sub => evaluateProvinceCriteria(sub, buildingCounts));
       case 'MIN_COUNT':
         if (typeof value !== 'object') return false;
         for (const building in value) {
