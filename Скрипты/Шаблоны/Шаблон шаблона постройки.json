@@ -1,5 +1,6 @@
 {
   "name": "Кристаллический Храм",
+  "province_limit": 1,
   "required_landscapes": {
     "AND": [
       "равнина",
