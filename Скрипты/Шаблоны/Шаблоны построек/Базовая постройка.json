@@ -2,6 +2,7 @@
   "name": "Базовая постройка",
   "province_limit": 1,
   "state_limit": 1,
+  "world_limit": 1,
   "required_landscapes": {
   },
   "required_planet": {

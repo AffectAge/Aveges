@@ -1,18 +1,18 @@
 /**
- * Функция для обработки ограничений построек по государственному лимиту
+ * Функция для обработки ограничений построек по мировому лимиту
  * @param {Object} data - Объект с данными из именованных диапазонов
  * @param {Sheet} sheet - Активный лист
  * @param {Spreadsheet} spreadsheet - Активная таблица
  * @returns {Array} newMessages - Массив новых сообщений для журнала
  */
-function processStateLimits(data, sheet, spreadsheet) {
+function processWorldLimits(data, sheet, spreadsheet) {
   let newMessages = [];
   
   try {
     // 1. Получение state_name из Переменные
     const variablesData = data['Переменные'];
     if (!variablesData || variablesData.length === 0 || !variablesData[0][0]) {
-      newMessages.push(`❗ [Ошибка][processStateLimits] Переменные пуст или не содержит данных.`);
+      newMessages.push(`❗ [Ошибка][processWorldLimits] Переменные пуст или не содержит данных.`);
       return newMessages;
     }
     
@@ -32,7 +32,7 @@ try {
       stateName = variablesJson.state_name;
       
       if (!stateName) {
-        newMessages.push(`❗ [Ошибка][processStateLimits] Ключ "state_name" не найден в Переменные.`);
+        newMessages.push(`❗ [Ошибка][processWorldLimits] Ключ "state_name" не найден в Переменные.`);
         return newMessages;
       }
     } else {
@@ -42,22 +42,19 @@ try {
     throw new Error(`Идентификатор "${targetIdentifier}" не найден в Переменные.`);
   }
 } catch (e) {
-  newMessages.push(`❗ [Ошибка][processStateLimits] Ошибка при парсинге JSON из Переменные: ${e.message}`);
+  newMessages.push(`❗ [Ошибка][processWorldLimits] Ошибка при парсинге JSON из Переменные: ${e.message}`);
   return newMessages;
 }
     
     // 2. Получение списка провинций
     const provincesData = data['Провинции_ОсновнаяИнформация'];
     if (!provincesData || provincesData.length === 0) {
-      newMessages.push(`❗ [Ошибка][processStateLimits] Провинции_ОсновнаяИнформация пуст или не содержит данных.`);
+      newMessages.push(`❗ [Ошибка][processWorldLimits] Провинции_ОсновнаяИнформация пуст или не содержит данных.`);
       return newMessages;
     }
     
-    // Парсинг провинций и группировка по владельцам
+    // Парсинг провинций
     const provinceMap = {}; // id -> owner
-    const stateProvinces = []; // Провинции нашего государства
-    const otherProvinces = []; // Провинции других государств
-    
     provincesData.forEach((row, index) => {
       const cell = row[0];
       if (cell) {
@@ -75,16 +72,11 @@ try {
           const province = JSON.parse(jsonString);
           if (province.id && province.owner) {
             provinceMap[province.id] = province.owner;
-            if (province.owner === stateName) {
-              stateProvinces.push(province.id);
-            } else {
-              otherProvinces.push(province.id);
-            }
           } else {
-            newMessages.push(`❗ [Ошибка][processStateLimits] Провинция в строке ${index + 1} не содержит ключа "id" или "owner".`);
+            newMessages.push(`❗ [Ошибка][processWorldLimits] Провинция в строке ${index + 1} не содержит ключей "id" или "owner".`);
           }
         } catch (e) {
-          newMessages.push(`❗ [Ошибка][processStateLimits] Ошибка при парсинге JSON из Провинции_ОсновнаяИнформация, строка ${index + 1}: ${e.message}`);
+          newMessages.push(`❗ [Ошибка][processWorldLimits] Ошибка при парсинге JSON из Провинции_ОсновнаяИнформация, строка ${index + 1}: ${e.message}`);
         }
       }
     });
@@ -92,51 +84,40 @@ try {
     // 3. Получение списка построек
     const buildingsData = data['Постройки_ОсновнаяИнформация'];
     if (!buildingsData || buildingsData.length === 0) {
-      newMessages.push(`❗ [Ошибка][processStateLimits] Постройки_ОсновнаяИнформация пуст или не содержит данных.`);
+      newMessages.push(`❗ [Ошибка][processWorldLimits] Постройки_ОсновнаяИнформация пуст или не содержит данных.`);
       return newMessages;
     }
     
-    // Подсчет построек по типам и государствам
-    // Структура: { state_owner: { building_name: count } }
-    const buildingCountsByState = {}; // e.g., { "Украина": { "Кирпичный завод": 6 }, "Беларусь": { ... } }
-    
+    // Подсчет построек в мире
+    // Структура: { building_name: count }
+    const buildingCounts = {};
     buildingsData.forEach((row, index) => {
       const cell = row[0];
       if (cell) {
         try {
           const parsedData = JSON.parse(cell);
-
+          
           // **Изменение: Поддержка нескольких зданий в одной ячейке**
           const buildingsArray = Array.isArray(parsedData) ? parsedData : [parsedData];
-
+          
           buildingsArray.forEach((building, bIndex) => {
             const buildingName = building.building_name;
             const provinceId = building.province_id;
             
             if (!buildingName || !provinceId) {
-              newMessages.push(`❗ [Ошибка][processStateLimits] Здание в строке ${index + 1}, элемент ${bIndex + 1} не содержит ключи "building_name" или "province_id".`);
+              newMessages.push(`❗ [Ошибка][processWorldLimits] Здание в строке ${index + 1}, элемент ${bIndex + 1} не содержит ключи "building_name" или "province_id".`);
               return;
             }
             
-            const owner = provinceMap[provinceId];
-            if (!owner) {
-              newMessages.push(`❗ [Ошибка][processStateLimits] Провинция с ID "${provinceId}" для здания в строке ${index + 1}, элемент ${bIndex + 1} не найдена.`);
-              return;
+            if (!buildingCounts[buildingName]) {
+              buildingCounts[buildingName] = 0;
             }
             
-            if (!buildingCountsByState[owner]) {
-              buildingCountsByState[owner] = {};
-            }
-            
-            if (!buildingCountsByState[owner][buildingName]) {
-              buildingCountsByState[owner][buildingName] = 0;
-            }
-            
-            buildingCountsByState[owner][buildingName] += 1;
+            buildingCounts[buildingName] += 1;
           });
           // **Конец изменения**
         } catch (e) {
-          newMessages.push(`❗ [Ошибка][processStateLimits] Ошибка при парсинге JSON из Постройки_ОсновнаяИнформация, строка ${index + 1}: ${e.message}`);
+          newMessages.push(`❗ [Ошибка][processWorldLimits] Ошибка при парсинге JSON из Постройки_ОсновнаяИнформация, строка ${index + 1}: ${e.message}`);
         }
       }
     });
@@ -144,7 +125,7 @@ try {
     // 4. Получение списка шаблонов построек
     const templatesData = data['Постройки_Шаблоны'];
     if (!templatesData || templatesData.length === 0) {
-      newMessages.push(`❗ [Ошибка][processStateLimits] Постройки_Шаблоны пуст или не содержит данных.`);
+      newMessages.push(`❗ [Ошибка][processWorldLimits] Постройки_Шаблоны пуст или не содержит данных.`);
       return newMessages;
     }
     
@@ -156,22 +137,22 @@ try {
         try {
           const template = JSON.parse(cell);
           if (!template.name) {
-            newMessages.push(`❗ [Ошибка][processStateLimits] Шаблон в строке ${index + 1} не содержит ключа "name".`);
+            newMessages.push(`❗ [Ошибка][processWorldLimits] Шаблон в строке ${index + 1} не содержит ключа "name".`);
             return;
           }
-          if (template.state_limit === undefined || template.state_limit === null) {
-            newMessages.push(`❗ [Ошибка][processStateLimits] Шаблон "${template.name}" в строке ${index + 1} не содержит ключа "state_limit".`);
+          if (template.world_limit === undefined || template.world_limit === null) {
+            newMessages.push(`❗ [Ошибка][processWorldLimits] Шаблон "${template.name}" в строке ${index + 1} не содержит ключа "world_limit".`);
             return;
           }
           templates.push({ data: template, row: index });
         } catch (e) {
-          newMessages.push(`❗ [Ошибка][processStateLimits] Ошибка при парсинге JSON из Постройки_Шаблоны, строка ${index + 1}: ${e.message}`);
+          newMessages.push(`❗ [Ошибка][processWorldLimits] Ошибка при парсинге JSON из Постройки_Шаблоны, строка ${index + 1}: ${e.message}`);
         }
       }
     });
     
     if (templates.length === 0) {
-      newMessages.push(`❗ [Ошибка][processStateLimits] Нет корректных шаблонов в Постройки_Шаблоны для обработки.`);
+      newMessages.push(`❗ [Ошибка][processWorldLimits] Нет корректных шаблонов в Постройки_Шаблоны для обработки.`);
       return newMessages;
     }
     
@@ -185,140 +166,45 @@ try {
     templates.forEach(templateInfo => {
       const template = templateInfo.data;
       const templateName = template.name;
-      const stateLimit = template.state_limit;
+      const worldLimit = template.world_limit;
       
-      if (typeof stateLimit !== 'number' || stateLimit < -1) {
-        newMessages.push(`❗ [Ошибка][processStateLimits] Шаблон "${templateName}" имеет недопустимое значение "state_limit": ${stateLimit}. Допустимы значения -1 или больше.`);
-      return;
+      if (typeof worldLimit !== 'number' || worldLimit < -1) {
+        newMessages.push(`❗ [Ошибка][processWorldLimits] Шаблон "${templateName}" имеет недопустимое значение "world_limit": ${worldLimit}. Допустимы значения -1 или больше.`);
+        return;
       }
       
-      // Получаем общее количество построек данного типа в каждом государстве
-      // и проверяем против state_limit
-      for (const owner in buildingCountsByState) {
-        if (buildingCountsByState.hasOwnProperty(owner)) {
-          const count = buildingCountsByState[owner][templateName] || 0;
-          
-          if (stateLimit !== -1 && count >= stateLimit) {
-            if (owner === stateName) {
-              // Удаляем провинции нашего государства из allowed_building_state
-              if (Array.isArray(template['allowed_building_state']) && template['allowed_building_state'].length > 0) {
-                const originalList = template['allowed_building_state'];
-                const removedProvinces = [...originalList]; // Копия для удаления
-                
-                // Очищаем список
-                template['allowed_building_state'] = [];
-                
-                // Генерируем сообщение о удалении провинций
-                const provinceIds = removedProvinces.join(', ');
-                
-                const description = listKeyDescriptions['allowed_building_state'] || 'allowed_building_state';
-                
-                newMessages.push(`[Критерии строительства][Лимит построек на государство] Постройка 🏭 ${templateName} больше не может быть построена ${description}: 📌 ${provinceIds} из-за достигнутого максимального количества данной постройки для одного государства. Лимит: 📊  ${stateLimit} на государство. Построено: 📊 ${count}. \n`);
-              }
-            } else {
-              // Удаляем провинции других государств из allowed_building_others
-              if (Array.isArray(template['allowed_building_others']) && template['allowed_building_others'].length > 0) {
-                // Находим провинции, принадлежащие текущему owner
-                const provincesToRemove = otherProvinces.filter(id => {
-                  return provinceMap[id] === owner;
-                });
-                
-                if (provincesToRemove.length > 0) {
-                  const originalList = template['allowed_building_others'];
-                  const updatedList = originalList.filter(id => !provincesToRemove.includes(id));
-                  template['allowed_building_others'] = updatedList;
-                  
-                  const provinceIds = provincesToRemove.join(', ');
-                  
-                  const description = listKeyDescriptions['allowed_building_others'] || 'allowed_building_others';
-                  newMessages.push(`[Критерии строительства][Лимит построек на государство] Постройка 🏭 ${templateName} больше не может быть построена ${description}: 📌 ${provinceIds} из-за достигнутого максимального количества данной постройки для одного государства. Лимит: 📊  ${stateLimit} на государство. Построено: 📊 ${count}. \n`);
-                }
-              }
-            }
+      // Получаем общее количество построек данного типа
+      const totalBuildings = buildingCounts[templateName] || 0;
+      
+      if (worldLimit !== -1 && totalBuildings >= worldLimit) {
+        // Если лимит достигнут или превышен, удаляем все провинции из allowed_building_state и allowed_building_others
+        ['allowed_building_state', 'allowed_building_others'].forEach(listKey => {
+          if (Array.isArray(template[listKey]) && template[listKey].length > 0) {
+            const removedProvinces = [...template[listKey]]; // Копируем текущий список
+            
+            // Очищаем список
+            template[listKey] = [];
+            
+            // Генерируем сообщение о удалении провинций
+            const provinceIds = removedProvinces.join(', ');
+            
+            const description = listKeyDescriptions[listKey] || listKey;
+            newMessages.push(`[Критерии строительства][Лимит построек на мир] Постройка 🏭 ${templateName} больше не может быть построена ${description}: 📌 ${provinceIds} из-за достигнутого максимального количества данной постройки для мира. Лимит: 📊 ${worldLimit} на мир. Построено: 📊 ${totalBuildings}. \n`);
           }
+        });
+        
+        // Обновляем шаблон в data
+        try {
+          data['Постройки_Шаблоны'][templateInfo.row][0] = JSON.stringify(template);
+        } catch (e) {
+          newMessages.push(`❗ [Ошибка][processWorldLimits] Ошибка при сериализации JSON для шаблона "${templateName}" в строке ${templateInfo.row + 1}: ${e.message}`);
         }
-      }
-      
-      // Обновляем шаблон в data, если были изменения
-      try {
-        data['Постройки_Шаблоны'][templateInfo.row][0] = JSON.stringify(template);
-      } catch (e) {
-        newMessages.push(`❗ [Ошибка][processStateLimits] Ошибка при сериализации JSON для шаблона "${templateName}" в строке ${templateInfo.row + 1}: ${e.message}`);
       }
     });
 
   } catch (error) {
-    newMessages.push(`❗ [Ошибка][processStateLimits] processStateLimits: ${error.message}`);
+    newMessages.push(`❗ [Ошибка][processWorldLimits] processWorldLimits: ${error.message}`);
   }
   
   return newMessages;
-} 
-
-/**
- * Функция для оценки соответствия состояния государства критериям
- * @param {Object} criteria - Критерии из state_required_buildings
- * @param {Object} buildingCounts - Объект с общим количеством построек по типам во всех провинциях государства
- * @returns {Boolean} - Возвращает true, если критерии выполнены, иначе false
- */
-function evaluateStateCriteria(criteria, buildingCounts) {
-  if (typeof criteria !== 'object' || criteria === null) return false;
-
-  for (const operator in criteria) {
-    if (!criteria.hasOwnProperty(operator)) continue;
-
-    const value = criteria[operator];
-
-    switch (operator) {
-      case 'AND':
-        if (!Array.isArray(value)) return false;
-        return value.every(subCriteria => evaluateStateCriteria(subCriteria, buildingCounts));
-
-      case 'OR':
-        if (!Array.isArray(value)) return false;
-        return value.some(subCriteria => evaluateStateCriteria(subCriteria, buildingCounts));
-
-      case 'NOT':
-        if (!Array.isArray(value)) return false;
-        return !value.some(subCriteria => evaluateStateCriteria(subCriteria, buildingCounts));
-
-      case 'MIN_COUNT':
-        if (typeof value !== 'object') return false;
-        for (const building in value) {
-          if (!value.hasOwnProperty(building)) continue;
-          const minCount = value[building];
-          if ((buildingCounts[building] || 0) < minCount) return false;
-        }
-        return true;
-
-      case 'MAX_COUNT':
-        if (typeof value !== 'object') return false;
-        for (const building in value) {
-          if (!value.hasOwnProperty(building)) continue;
-          const maxCount = value[building];
-          if ((buildingCounts[building] || 0) > maxCount) return false;
-        }
-        return true;
-
-      case 'XNOR':
-        if (!Array.isArray(value) || value.length !== 2) return false;
-        const [first, second] = value;
-        const firstExists = (buildingCounts[first] || 0) > 0;
-        const secondExists = (buildingCounts[second] || 0) > 0;
-        return firstExists === secondExists;
-
-      case 'IMPLIES':
-        if (!Array.isArray(value) || value.length !== 2) return false;
-        const [antecedent, consequent] = value;
-        const antecedentExists = (buildingCounts[antecedent] || 0) > 0;
-        const consequentExists = (buildingCounts[consequent] || 0) > 0;
-        return !antecedentExists || consequentExists;
-
-      default:
-        // Если оператор неизвестен, возвращаем false
-        return false;
-    }
-  }
-
-  // Если критерий не содержит известных операторов
-  return false;
 }
