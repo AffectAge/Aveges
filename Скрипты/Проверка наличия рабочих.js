@@ -249,8 +249,8 @@ function processRequiredWorkers(data, sheet, spreadsheet) {
                 const total = totalWorkersMap[id] !== undefined ? totalWorkersMap[id] : 'нет данных';
                 const employed = employedWorkersMap[id] !== undefined ? employedWorkersMap[id] : 'нет данных';
                 messages.push(
-                  `[Постройки][Требования к рабочим] Постройка "${template.name || 'Без названия'}" ` +
-                  `${type}: провинция "${id}" не может быть выбрана (требуется ${requiredWorkers} рабочих, свободных: ${free}, всего: ${total}, занято: ${employed}).`
+                  `[Постройки][Требования к рабочим] Постройка 🏭 ${template.name || 'Без названия'} ` +
+                  `${type}: 📌 ${id} не может быть построена: \n ➤ Требуется 👷🏼 ${requiredWorkers} рабочих \n ➤ Свободных: 👷🏼 ${free} \n ➤ Всего: 👷🏼 ${total} \n ➤ Занято: 👷🏼 ${employed}. \n`
                 );
               });
             }
@@ -262,7 +262,7 @@ function processRequiredWorkers(data, sheet, spreadsheet) {
           if (template.hasOwnProperty('allowed_building_state')) {
             // Берём только те провинции, которые ещё числятся в template.allowed_building_state
             const filteredOurProvinces = ourProvinces.filter(id => template.allowed_building_state.includes(id));
-            template.allowed_building_state = filterProvinces(filteredOurProvinces, 'в наших провинциях');
+            template.allowed_building_state = filterProvinces(filteredOurProvinces, 'в нашей провинциях');
           }
 
           if (template.hasOwnProperty('allowed_building_others')) {
