@@ -1,6 +1,12 @@
 {
   "id": "prov_002",
   "owner": "Украина",
+  "free_arable_land": 10,
+  "occupied_arable_land": 10,
+  "total_arable_land": 10,
+  "province_radiation": 18,               
+  "province_pollution": 35,              
+  "province_stability": 80,
   "landscapes": ["равнина", "побережье"],
   "planet": "Земля",
   "province_culture": ["экологическая", "научная"],
@@ -19,8 +25,5 @@
       "resource": "iron",
       "quantity": 30
     }
-  ],  
-  "province_radiation": 18,               
-  "province_pollution": 35,              
-  "province_stability": 80
+  ] 
 }
