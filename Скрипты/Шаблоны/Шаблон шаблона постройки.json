@@ -3,6 +3,12 @@
   "province_limit": 1,
   "state_limit": 1,
   "world_limit": 1,
+  "resource_extraction": [
+    {
+      "resource": "Базовый ресурс",
+      "quantity": 100
+    }
+  ],
   "required_landscapes": {
     "AND": [
       "равнина",

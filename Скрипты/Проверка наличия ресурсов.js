@@ -16,36 +16,35 @@ function processRequiredResources(data, spreadsheet) {
     }
     
     // 1. Получение state_name из Переменные
-let stateName;
-try {
-  const targetIdentifier = 'Основные данные государства';
-  
-  // Ищем строку с нужным идентификатором
-  const targetRow = data['Переменные'].find(row => row[0] === targetIdentifier);
-  
-  if (targetRow && targetRow[1]) {
-    // Извлекаем JSON из второго столбца
-    const jsonMatch = targetRow[1].match(/\{.*\}/);
-    if (jsonMatch) {
-      const variablesJson = JSON.parse(jsonMatch[0]);
-      stateName = variablesJson.state_name;
+    let stateName;
+    try {
+      const targetIdentifier = 'Основные данные государства';
       
-      if (!stateName) {
-        messages.push(`[Ошибка][processRequiredResources] Ключ "state_name" не найден в Переменные.`);
-        return messages;
+      // Ищем строку с нужным идентификатором
+      const targetRow = data['Переменные'].find(row => row[0] === targetIdentifier);
+      
+      if (targetRow && targetRow[1]) {
+        // Извлекаем JSON из второго столбца
+        const jsonMatch = targetRow[1].match(/\{.*\}/);
+        if (jsonMatch) {
+          const variablesJson = JSON.parse(jsonMatch[0]);
+          stateName = variablesJson.state_name;
+          
+          if (!stateName) {
+            messages.push(`[Ошибка][processRequiredResources] Ключ "state_name" не найден в Переменные.`);
+            return messages;
+          }
+        } else {
+          throw new Error('Не удалось извлечь JSON из содержимого Переменные.');
+        }
+      } else {
+        throw new Error(`Идентификатор "${targetIdentifier}" не найден в Переменные.`);
       }
-    } else {
-      throw new Error('Не удалось извлечь JSON из содержимого Переменные.');
+    } catch (e) {
+      messages.push(`[Ошибка][processRequiredResources] Ошибка при парсинге JSON из Переменные: ${e.message}`);
+      return messages;
     }
-  } else {
-    throw new Error(`Идентификатор "${targetIdentifier}" не найден в Переменные.`);
-  }
-} catch (e) {
-  messages.push(`[Ошибка][processRequiredResources] Ошибка при парсинге JSON из Переменные: ${e.message}`);
-  return messages;
-}
 
-    
     // Клонирование данных для обновления
     let updatedTemplates = JSON.parse(JSON.stringify(data['Постройки_Шаблоны']));
   
@@ -173,26 +172,49 @@ try {
       const currentMatchingState = template.allowed_building_state || [];
       const currentMatchingOthers = template.allowed_building_others || [];
   
-      // Определение провинций, которые нужно удалить из allowed_building_state
+      // Обработка провинций нашего государства
       const provincesToRemoveState = currentMatchingState.filter(id => !matchingProvincesState.includes(id));
       if (provincesToRemoveState.length > 0) {
         // Обновляем список, удаляя неподходящие провинции
         template.allowed_building_state = currentMatchingState.filter(id => matchingProvincesState.includes(id));
-        const provinceNames = provincesToRemoveState.join(', ');
-        messages.push(`[Постройки][Критерии наличия ресурсов] Постройка "${templateName}" больше не может функционировать в провинциях нашего государства: ${provinceNames}, так как в этих провинциях нет необходимого количества требуемых запасов ресурсов.`);
+  
+        provincesToRemoveState.forEach(provinceId => {
+          const provinceResources = provinceResourcesMap[provinceId] || {};
+          let resourceDetails = '';
+          Object.keys(requiredResources).forEach(resource => {
+            const required = requiredResources[resource];
+            const available = provinceResources[resource] || 0;
+            if (available < required) {
+              resourceDetails += `\n  ➤ 🧱 ${resource}: необходимо 📦 ${required}, имеется 📦 ${available}`;
+            }
+          });
+  
+          messages.push(`[Постройки][Критерии наличия ресурсов] Постройка 🏭 ${templateName} не может быть построена в нашей провинции из-за нехватки запасов ресурсов 📌 ${provinceId}:${resourceDetails} \n`);
+        });
       }
   
-      // Определение провинций, которые нужно удалить из allowed_building_others
+      // Обработка провинций других государств
       const provincesToRemoveOthers = currentMatchingOthers.filter(id => !matchingProvincesOthers.includes(id));
       if (provincesToRemoveOthers.length > 0) {
         // Обновляем список, удаляя неподходящие провинции
         template.allowed_building_others = currentMatchingOthers.filter(id => matchingProvincesOthers.includes(id));
-        const provinceNames = provincesToRemoveOthers.join(', ');
-        messages.push(`[Постройки][Критерии наличия ресурсов] Постройка "${templateName}" больше не может функционировать в провинциях других государств: ${provinceNames}, так как в этих провинциях нет необходимого количества требуемых запасов ресурсов.`);
+  
+        provincesToRemoveOthers.forEach(provinceId => {
+          const provinceResources = provinceResourcesMap[provinceId] || {};
+          let resourceDetails = '';
+          Object.keys(requiredResources).forEach(resource => {
+            const required = requiredResources[resource];
+            const available = provinceResources[resource] || 0;
+            if (available < required) {
+              resourceDetails += `\n  ➤ 🧱 ${resource}: необходимо 📦 ${required}, имеется 📦 ${available}`;
+            }
+          });
+  
+          messages.push(`[Постройки][Критерии наличия ресурсов] Постройка 🏭 ${templateName} не может быть построена в чужой провинции из-за нехватки запасов ресурсов 📌 ${provinceId}:${resourceDetails} \n`);
+        });
       }
   
       // **Важно:** Не добавляем новые провинции, даже если они соответствуют критериям.
-      // Поэтому мы не обновляем списки добавлением новых соответствующих провинций.
   
       // Обновление шаблона в массиве обновленных шаблонов
       updatedTemplates[templateInfo.row][0] = JSON.stringify(template);

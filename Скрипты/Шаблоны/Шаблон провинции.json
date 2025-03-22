@@ -5,7 +5,21 @@
   "planet": "Земля",
   "province_culture": ["экологическая", "научная"],
   "province_religion": ["светопоклонство"],          
-  "province_climate": ["умеренный"],      
+  "province_climate": ["умеренный"],
+  "resources": [
+    {
+      "resource": "Базовый ресурс",
+      "quantity": 10000
+    },
+    {
+      "resource": "stone",
+      "quantity": 50
+    },
+    {
+      "resource": "iron",
+      "quantity": 30
+    }
+  ],  
   "province_radiation": 18,               
   "province_pollution": 35,              
   "province_stability": 80
