@@ -165,13 +165,13 @@ function processResourceExtraction(data) {
             const resourceIndex = province.resources.findIndex(r => r.resource === resourceName);
             if (resourceIndex === -1) {
               // Ресурса нет – выводим сообщение и деактивируем здание
-              messages.push(`[Событие] В провинции "${province.id}" отсутствуют запасы ресурса "${resourceName}" для здания "${building.building_name}". Здание деактивировано.`);
+              messages.push(`[Добыча ресурсов] В провинции 📌 ${province.id} отсутствуют запасы ресурса 🧱 ${resourceName} для здания 🏭 ${building.building_name}. Здание не будет работать и со временем может самоуничтожиться. \n`);
               building.status = "Неактивная";
               return;
             }
             const provinceResource = province.resources[resourceIndex];
             if (provinceResource.quantity <= 0) {
-              messages.push(`[Событие] Ресурс "${resourceName}" в провинции "${province.id}" полностью исчерпан для здания "${building.building_name}". Здание деактивировано.`);
+              messages.push(`[Добыча ресурсов] Ресурс 🧱 ${resourceName} в провинции 📌 ${province.id} полностью исчерпан для здания 🏭 ${building.building_name}. Здание не будет работать и со временем может самоуничтожиться. \n`);
               building.status = "Неактивная";
               return;
             }
@@ -179,19 +179,21 @@ function processResourceExtraction(data) {
             let availableExtraction = extractionAmount;
             if (provinceResource.quantity < extractionAmount) {
               availableExtraction = provinceResource.quantity;
-              messages.push(`[Событие] Недостаточно ресурса "${resourceName}" в провинции "${province.id}" для здания "${building.building_name}". Извлечено только ${availableExtraction} единиц.`);
+              messages.push(`[Добыча ресурсов] Недостаточно запасов ресурса 🧱 ${resourceName} в провинции 📌 ${province.id} для здания 🏭 ${building.building_name}. Добыто только 🧱 ${availableExtraction} единиц. \n`);
             }
             // Вычитаем добытое количество из провинции
             provinceResource.quantity -= availableExtraction;
             // Если ресурс полностью исчерпан, удаляем его из провинции и выводим сообщение
             if (provinceResource.quantity <= 0) {
-              messages.push(`[Событие] Запасы ресурса "${resourceName}" в провинции "${province.id}" исчерпаны.`);
+              messages.push(`[Добыча ресурсов] Запасы ресурса 🧱 ${resourceName} в провинции 📌 ${province.id} истощены. \n`);
               province.resources.splice(resourceIndex, 1);
             } else {
               // Если оставшиеся запасы меньше, чем заданное число циклов добычи, выводим сообщение
               const cyclesRemaining = Math.ceil(provinceResource.quantity / extractionAmount);
               if (cyclesRemaining < extractionThreshold) {
-                messages.push(`[Событие] Здание "${building.building_name}" в провинции "${province.id}": запасы ресурса "${resourceName}" исчерпаются через ${cyclesRemaining} ход(а/ов).`);
+                messages.push(`[Добыча ресурсов] 🏭 Постройка ${building.building_name} в провинции 📌 ${province.id} скоро истощит запасы ресурса 🧱 ${resourceName}. \n` +
+              ` ➤ Остаток: 🧱 ${provinceResource.quantity} \n` +
+              ` ➤ Оценка: 🕒 ${cyclesRemaining} ходов до истощения. \n`);
               }
             }
             // Обновляем склад здания: прибавляем добытое количество
