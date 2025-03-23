@@ -10,7 +10,6 @@ function processEmployment(data, sheet, spreadsheet) {
     if (!templatesData || !populationData || !buildingsData || !variablesData) {
       const errMsg = '[❌ Ошибка] Один из именованных диапазонов отсутствует или пуст.';
       messages.push(errMsg);
-      console.log(errMsg);
       return messages;
     }
 
@@ -26,7 +25,6 @@ function processEmployment(data, sheet, spreadsheet) {
           if (!stateName) {
             const errMsg = '[❌ Ошибка] Ключ "state_name" отсутствует в "Переменные".';
             messages.push(errMsg);
-            console.log(errMsg);
             return messages;
           }
         } else {
@@ -35,11 +33,9 @@ function processEmployment(data, sheet, spreadsheet) {
       } else {
         throw new Error('Идентификатор "Основные данные государства" не найден.');
       }
-      console.log(`🌐 Название государства: ${stateName}`);
     } catch (e) {
       const errMsg = `[❌ Ошибка] Ошибка при извлечении state_name: ${e.message}`;
       messages.push(errMsg);
-      console.log(errMsg);
       return messages;
     }
 
@@ -58,16 +54,13 @@ function processEmployment(data, sheet, spreadsheet) {
       } catch (e) {
         const errMsg = `[❌ Ошибка] Невозможно распарсить данные о постройках в строке ${rowIndex + 1}: ${e.message}`;
         messages.push(errMsg);
-        console.log(errMsg);
         return;
       }
 
       // Обработка каждого здания из ячейки
       buildingEntries.forEach((building, index) => {
-        console.log(`🏗️ Обработка здания в строке ${rowIndex + 1}, элемент ${index + 1}: ${building.building_name}`);
         try {
           if (building.building_owner !== stateName || building.status !== "Активная") {
-            console.log(`⏭️ Пропуск здания "${building.building_name}": неактивное или принадлежит другому государству.`);
             return; // Пропускаем неактивные или чужие здания
           }
 
@@ -86,14 +79,12 @@ function processEmployment(data, sheet, spreadsheet) {
           if (!template) {
             const errMsg = `[❌ Ошибка] Шаблон для постройки "${building.building_name}" не найден.`;
             messages.push(errMsg);
-            console.log(errMsg);
             return;
           }
 
           const templateObj = JSON.parse(template[0]);
           const requiredWorkers = templateObj.required_workers || 0;
           const requiredProfessions = templateObj.required_workers_professions || [];
-          console.log(`👷 Требуется рабочих: ${requiredWorkers} для постройки "${building.building_name}"`);
 
           // Получаем данные о населении провинции
           const provinceData = populationData.find(pRow => {
@@ -110,58 +101,58 @@ function processEmployment(data, sheet, spreadsheet) {
           if (!provinceData) {
             const errMsg = `[❌ Ошибка] Данные о населении для провинции "${building.province_id}" не найдены.`;
             messages.push(errMsg);
-            console.log(errMsg);
             return;
           }
-
+		  
           const provincePopObj = JSON.parse(provinceData[0]);
           const availableWorkers = provincePopObj.unemployed_workers || 0;
-          console.log(`🛠️ В провинции "${building.province_id}" доступно рабочих: ${availableWorkers}`);
+		  const totalWorkers = (provincePopObj.unemployed_workers || 0) + (provincePopObj.employed_workers || 0);
+		  
+		  // Если ключа professions нет или он не является массивом, создаём его
+          if (!provincePopObj.professions || !Array.isArray(provincePopObj.professions)) {
+            provincePopObj.professions = [{}];
+          }
 
           if (availableWorkers < requiredWorkers) {
             // Обновляем статус здания в объекте
             building.status = "Неактивная";
-            const alertMsg = `[⚠️ Оповещение] Постройка "${building.building_name}" в провинции "${building.province_id}" деактивирована из-за нехватки рабочих.`;
+            const alertMsg = `[Найм рабочих] ❌ Постройка 🏭 ${building.building_name} в провинции 📌 ${building.province_id} не будет работать из-за нехватки рабочих.\n ➤ Требуется: 👷🏼 ${requiredWorkers}\n ➤ Свободных: 👷🏼 ${provincePopObj.unemployed_workers || 0}\n ➤ Занятых: 👷🏼 ${provincePopObj.employed_workers || 0}\n ➤ Всего в провинции: 👷🏼 ${totalWorkers}. \n`;
             messages.push(alertMsg);
-            console.log(alertMsg);
             return;
           }
 
           // Обновляем данные о рабочей силе
           provincePopObj.unemployed_workers -= requiredWorkers;
           provincePopObj.employed_workers += requiredWorkers;
-          console.log(`🔄 Обновлённые данные: безработных - ${provincePopObj.unemployed_workers}, занятых - ${provincePopObj.employed_workers}`);
 
           // Обновляем профессии
-          const professionsMap = provincePopObj.professions[0] || {};
-          requiredProfessions.forEach(prof => {
-            professionsMap[prof.profession] = (professionsMap[prof.profession] || 0) + prof.quantity;
-            console.log(`💼 Добавлено ${prof.quantity} работников профессии "${prof.profession}"`);
-          });
+          // Обновляем профессии
+const professionsMap = provincePopObj.professions[0] || {};
+let professionsSummary = '';
+requiredProfessions.forEach(prof => {
+  professionsMap[prof.profession] = (professionsMap[prof.profession] || 0) + prof.quantity;
+  professionsSummary += `   💼 ${prof.profession}: + 👷🏼 ${prof.quantity} \n`;
+});
+provincePopObj.professions[0] = professionsMap;
 
           provincePopObj.professions[0] = professionsMap;
           populationData[populationData.indexOf(provinceData)][0] = JSON.stringify(provincePopObj);
-
-          const successMsg = `[✅ Успешно] Постройка "${building.building_name}" в провинции "${building.province_id}" получила ${requiredWorkers} рабочих.`;
+          
+          const successMsg = `[Найм рабочих] ✅ Постройка 🏭 ${building.building_name} в провинции 📌 ${building.province_id} наняла 👷🏼 ${requiredWorkers} рабочих. \n ➤ Свободных: 👷🏼 ${provincePopObj.unemployed_workers || 0}\n ➤ Занятых: 👷🏼 ${provincePopObj.employed_workers || 0}\n ➤ Всего в провинции: 👷🏼 ${totalWorkers}. \n ➤ Нанятые рабочие по профессиям:\n ${professionsSummary}`;
           messages.push(successMsg);
-          console.log(successMsg);
         } catch (e) {
           const errMsg = `[❌ Ошибка] Ошибка обработки здания в строке ${rowIndex + 1}, элемент ${index + 1}: ${e.message}`;
           messages.push(errMsg);
-          console.log(errMsg);
         }
       });
       // После обработки всех зданий в ячейке, сохраняем обновлённые данные
       row[0] = JSON.stringify(buildingEntries);
-      console.log(`💾 Обновлены данные строки ${rowIndex + 1}.`);
     });
 
-    console.log('📝 Итоговые сообщения:', messages);
     return messages;
   } catch (error) {
     const errMsg = `[❌ Ошибка] Ошибка выполнения processRequiredWorkers: ${error.message}`;
     messages.push(errMsg);
-    console.log(errMsg);
     return messages;
   }
 }

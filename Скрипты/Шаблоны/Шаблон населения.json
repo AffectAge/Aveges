@@ -2,5 +2,7 @@
     "province_id": "prov_002",
     "unemployed_workers": 1000,
     "total_workers": 1000,
-    "employed_workers": 0
+    "employed_workers": 0,
+	"professions": [
+  ]
   }
