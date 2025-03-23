@@ -1,3 +1,4 @@
+[
 {
   "building_name": "Кирпичный завод",
   "building_owner": "Украина",
@@ -15,3 +16,4 @@
 	"Железо": {"current_quantity": 40, "reserve_level": 10}
   }
 }
+]
