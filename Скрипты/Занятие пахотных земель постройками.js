@@ -37,7 +37,7 @@ function processArableLandSimple(data, spreadsheet) {
       } else {
         throw new Error('Идентификатор "Основные данные государства" не найден.');
       }
-      messages.push(`🌐 Название государства: ${stateName}`);
+	  
     } catch (e) {
       const errMsg = `[❌ Ошибка] Ошибка при извлечении state_name: ${e.message}`;
       messages.push(errMsg);
@@ -146,14 +146,19 @@ function processArableLandSimple(data, spreadsheet) {
 
             // Вычисляем требуемое количество земли
             const requiredLand = template.required_arable_land * building.building_level * landEfficiency;
-
+            const totalLand = province.free_arable_land + province.occupied_arable_land;
+			
             // Если свободной земли хватает, перераспределяем её
             if (province.free_arable_land >= requiredLand) {
               province.free_arable_land -= requiredLand;
               province.occupied_arable_land += requiredLand;
-              building.used_arable_land = requiredLand;
+              const successMsg = `[Занятие пахотных земель] ✅ Постройка 🏭 ${building.building_name} в провинции 📌 ${provinceId} заняла 🌾 ${requiredLand} пахотных земель:\n` +
+                    ` ➤ Свободно: 🌾 ${province.free_arable_land}\n` +
+                    ` ➤ Занято: 🌾 ${province.occupied_arable_land}\n` +
+                    ` ➤ Всего в провинции: 🌾 ${totalLand} \n`;
+              messages.push(successMsg);
             } else {
-              messages.push(`[Внимание][processArableLandSimple] Недостаточно земли для постройки "${building.building_name}" в провинции "${provinceId}". Изменяем статус на "Неактивная".`);
+              messages.push(`[Занятие пахотных земель] ❌ Недостаточно пахотных земель для постройки 🏭 ${building.building_name} в провинции 📌 ${provinceId}. Постройка не будет работать и может самоуничтожиться со временем: \n ➤ Свободно: 🌾 ${province.free_arable_land}\n  ➤ Занято: 🌾 ${province.occupied_arable_land}\n ➤ Всего в провинции: 🌾 ${totalLand} \n`);
               building.status = "Неактивная";
             }
           }

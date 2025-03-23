@@ -91,7 +91,7 @@ function generateDetailedReason(checkField, buildingCondition, provinceValue) {
   // Для текстовых критериев используем "неподходящего", для числовых — "неподходящей"
   const adjective = checkField.evaluator === evaluateTextCriteria ? "➤ Неподходящего критерия" : "➤ Неподходящего уровня";
   
-  return `${adjective} ${detail.emoji} ${detail.label} ( требуется: ${requiredText}, обнаружено: ${provinceText} )\n`;
+  return `${adjective} ${detail.emoji} ${detail.label} ( Требуется: ${requiredText}, Обнаружено: ${provinceText} ) \n`;
 }
 
 /**
@@ -320,16 +320,16 @@ function processBuildingsCriterias(data, sheet, spreadsheet) {
     
     if (matchingProvincesState.length > 0 || matchingProvincesOthers.length > 0) {
       // Если есть подходящие провинции, генерируем сообщение о возможностях
-      newMessages.push(`[Основные критерии построек] \n🏗️ Постройка 🏭 ${constructionName} подходит для провинций:\n`);
+      // newMessages.push(`[Основные критерии построек] \n🏗️ Постройка 🏭 ${constructionName} подходит для провинций:\n`);
       
       if (matchingProvincesState.length > 0) {
         const provincesStateList = matchingProvincesState.join(', ');
-        newMessages.push(`[Основные критерии построек] \n✅ Нашего государства: ${provincesStateList}.\n`);
+        // newMessages.push(`[Основные критерии построек] \n✅ Нашего государства: ${provincesStateList}.\n`);
       }
       
       if (matchingProvincesOthers.length > 0) {
         const provincesOthersList = matchingProvincesOthers.join(', ');
-        newMessages.push(`[Основные критерии построек] \n✅ Других государств: ${provincesOthersList}.\n`);
+        // newMessages.push(`[Основные критерии построек] \n✅ Других государств: ${provincesOthersList}.\n`);
       }
     }
     
