@@ -3,7 +3,7 @@
   "province_limit": -1,
   "state_limit": -1,
   "world_limit": -1,
-  "required_arable_land": 0,
+  "required_arable_land": 10,
   "required_workers":0,
   "required_workers_professions": [
     {
