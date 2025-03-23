@@ -1,5 +1,8 @@
 {
   "name": "Базовая постройка",
+  "building_owner": "Государство А",
+  "status": "Активная",
+  "province_id": "prov_002",
   "province_limit": 1,
   "state_limit": 1,
   "world_limit": 1,
