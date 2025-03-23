@@ -1,0 +1,17 @@
+{
+  "building_name": "Кирпичный завод",
+  "building_owner": "Украина",
+  "province_id": "prov_002",
+  "status": "Активная",
+  "building_level": 1,
+  "building_modifiers": {
+      "land_efficiency": 1.0,
+	  "consumption_efficiency": 1.0,
+	  "production_efficiency": 1.0,
+      "extraction_efficiency": 1.0,
+	  "transport_efficiency": 1.0
+    },
+  "warehouse": {
+	"Железо": {"current_quantity": 40, "reserve_level": 10}
+  }
+}
