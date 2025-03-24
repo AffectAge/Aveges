@@ -21,6 +21,12 @@
       "quantity": 100
     }
   ],
+  "resource_production": [
+      {
+        "resource": "Базовый ресурс",
+        "quantity": 200
+      }
+    ],
   "required_landscapes": {
     "AND": [
       "равнина",

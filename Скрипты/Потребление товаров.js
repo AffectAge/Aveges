@@ -1,19 +1,21 @@
 /**
- * Функция для обработки производства ресурсов зданиями.
+ * Функция для обработки потребления ресурсов зданиями.
  * Выполняет следующие шаги:
- * 1. Находит все постройки, принадлежащие нашему государству и со статусом "Активная".
+ * 1. Находит все здания, принадлежащие нашему государству и со статусом "Активная".
  * 2. Для каждого такого здания:
  *    2.1 Ищет шаблон здания в "Постройки_Шаблоны" по совпадению building_name с name шаблона.
- *         Если в шаблоне отсутствует ключ resource_production – здание пропускается.
- *    2.2 Копирует массив resource_production из шаблона, вычисляя для каждого ресурса:
- *         current_quantity = (quantity * building_level) * production_efficiency.
+ *         Если в шаблоне отсутствует ключ resource_consumption – здание пропускается.
+ *    2.2 Копирует массив resource_consumption из шаблона, вычисляя для каждого ресурса:
+ *         current_quantity = (quantity * building_level) * consumption_efficiency.
  *         Ключ quantity остаётся без изменений.
- * 3. Добавляет ресурсы из resource_production в warehouse здания, увеличивая current_quantity на складе.
+ *    3. Проверяет, достаточно ли ресурсов на складе (warehouse) здания для покрытия потребления:
+ *       - Если для всех ресурсов хватает current_quantity – вычитает требуемые суммы из склада.
+ *       - Если хотя бы для одного ресурса недостаточно – устанавливает статус здания в "Неактивная".
  *
  * @param {Object} data - Объект с данными из именованных диапазонов.
  * @returns {Array} messages - Массив сообщений для журнала событий.
  */
-function processResourceProduction(data) {
+function processResourceConsumption(data) {
   let messages = [];
   try {
     // 0. Извлекаем stateName из "Переменные"
@@ -79,45 +81,63 @@ function processResourceProduction(data) {
             return;
           }
           
-          // Если в шаблоне отсутствует ключ resource_production – пропускаем здание
-          if (!template.resource_production || !Array.isArray(template.resource_production)) return;
+          // Если в шаблоне отсутствует ключ resource_consumption – пропускаем здание
+          if (!template.resource_consumption || !Array.isArray(template.resource_consumption)) return;
           
-          // 2.2 Копируем массив resource_production с вычислением current_quantity для каждого ресурса
-          const newResourceProduction = [];
-          template.resource_production.forEach(item => {
+          // 2.2 Копируем массив resource_consumption с вычислением current_quantity для каждого ресурса
+          const newResourceConsumption = [];
+          template.resource_consumption.forEach(item => {
             if (typeof item.quantity !== 'number') return;
             const baseQuantity = item.quantity;
             const level = building.building_level || 1;
-            let productionEfficiency = 1;
-            if (building.building_modifiers && typeof building.building_modifiers.production_efficiency === 'number') {
-              productionEfficiency = building.building_modifiers.production_efficiency;
+            let consumptionEfficiency = 1;
+            if (building.building_modifiers && typeof building.building_modifiers.consumption_efficiency === 'number') {
+              consumptionEfficiency = building.building_modifiers.consumption_efficiency;
             }
-            const currentQuantity = (baseQuantity * level) * productionEfficiency;
-            newResourceProduction.push({
+            const currentQuantity = (baseQuantity * level) * consumptionEfficiency;
+            newResourceConsumption.push({
               resource: item.resource,
               quantity: baseQuantity,
               current_quantity: currentQuantity
             });
           });
-          if (newResourceProduction.length === 0) return;
+          if (newResourceConsumption.length === 0) return;
           
-          // Обновляем ключ resource_production здания
-          building.resource_production = newResourceProduction;
+          // Обновляем ключ resource_consumption здания
+          building.resource_consumption = newResourceConsumption;
           
-          // 3. Добавляем произведённые ресурсы в warehouse здания
+          // 3. Проверяем наличие достаточного количества ресурсов на складе здания
+          let canConsumeAll = true;
           if (!building.warehouse) {
             messages.push(`[Ошибка] Здание "${building.building_name}" не содержит склада (warehouse).`);
+            canConsumeAll = false;
           } else {
-            newResourceProduction.forEach(item => {
+            newResourceConsumption.forEach(item => {
               const resourceName = item.resource;
-              const producedAmount = item.current_quantity;
+              const requiredAmount = item.current_quantity;
               if (!building.warehouse.hasOwnProperty(resourceName)) {
-                messages.push(`[Производство товаров] Товар 🧱 ${resourceName} отсутствует на складе здания 🏭 ${building.building_name}. Добавляю на склад. \n`);
-                // Создаем запись для ресурса, предположим reserve_level = 0
-                building.warehouse[resourceName] = { current_quantity: 0, reserve_level: 0 };
+                messages.push(`[Событие] Здание "${building.building_name}" не имеет ресурса "${resourceName}" на складе. Здание деактивировано.`);
+                canConsumeAll = false;
+              } else {
+                const warehouseResource = building.warehouse[resourceName];
+                if (typeof warehouseResource.current_quantity !== 'number' || warehouseResource.current_quantity < requiredAmount) {
+                  messages.push(`[Событие] Недостаточно ресурса "${resourceName}" на складе здания "${building.building_name}". Требуется ${requiredAmount}, доступно ${warehouseResource.current_quantity || 0}. Здание деактивировано.`);
+                  canConsumeAll = false;
+                }
               }
-              building.warehouse[resourceName].current_quantity += producedAmount;
             });
+          }
+          
+          // 3.1 Если достаточно ресурсов – вычитаем требуемые суммы из склада
+          if (canConsumeAll) {
+            newResourceConsumption.forEach(item => {
+              const resourceName = item.resource;
+              const requiredAmount = item.current_quantity;
+              building.warehouse[resourceName].current_quantity -= requiredAmount;
+            });
+          } else {
+            // 3.2 Если ресурсов недостаточно – деактивируем здание
+            building.status = "Неактивная";
           }
           
           updatedBuildings = true;
@@ -132,7 +152,7 @@ function processResourceProduction(data) {
       }
     });
   } catch (error) {
-    messages.push(`[Ошибка] processResourceProduction: ${error.message}`);
+    messages.push(`[Ошибка] processResourceConsumption: ${error.message}`);
   }
   return messages;
 }
