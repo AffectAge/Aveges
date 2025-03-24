@@ -121,7 +121,7 @@ function processResourceConsumption(data) {
               } else {
                 const warehouseResource = building.warehouse[resourceName];
                 if (typeof warehouseResource.current_quantity !== 'number' || warehouseResource.current_quantity < requiredAmount) {
-                  messages.push(`[Событие] Недостаточно ресурса "${resourceName}" на складе здания "${building.building_name}". Требуется ${requiredAmount}, доступно ${warehouseResource.current_quantity || 0}. Здание деактивировано.`);
+                  messages.push(`[Потребление товаров] Недостаточно ресурса 🧱 ${resourceName} на складе здания 🏭 ${building.building_name}. Требуется 🧱 ${requiredAmount}, доступно 🧱 ${warehouseResource.current_quantity || 0}. Здание не будет работать и со временем может самоуничтожиться. \n`);
                   canConsumeAll = false;
                 }
               }

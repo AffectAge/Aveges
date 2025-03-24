@@ -9,8 +9,9 @@
   "required_arable_land": 0,
   "required_workers":0,
   "resource_production": [],
-  "required_workers_professions": [],
+  "resource_consumption": [],
   "resource_extraction": [],
+  "required_workers_professions": [],
   "required_landscapes": {
   },
   "required_planet": {
