@@ -15,8 +15,8 @@ function initGameState() {
   if (!fs.existsSync(statePath)) {
     const defaultState = {
       turn: 1,
-      current_country: "Player1",
-      countrys: ["Player1"]
+      current_country: "Украина",
+      countrys: ["Украина"]
     };
     fs.writeFileSync(statePath, JSON.stringify(defaultState, null, 2), 'utf-8');
     console.log("Файл 'state.json' создан автоматически.");

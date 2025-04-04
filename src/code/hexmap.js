@@ -1,4 +1,4 @@
-export function drawHexMap(canvasId, rows = 20, cols = 20) {
+export function drawHexMap(canvasId, rows = 50, cols = 100) {
   const canvas = document.getElementById(canvasId);
   const ctx = canvas.getContext('2d');
 

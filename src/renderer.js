@@ -9,10 +9,8 @@ const { createBackup, listBackups, restoreBackup } = require('./code/backup');
 
 let currentLang = localStorage.getItem('lang') || 'ru';
 
-function applyTranslation(state) {
+function updateTurnDisplay(state) {
   document.getElementById('turn-display').innerText = state.turn;
-  document.getElementById('end-turn').innerText = t('END_TURN');
-  document.getElementById('lang-select').value = currentLang;
 }
 
 window.createBackup = () => {
@@ -62,25 +60,16 @@ window.confirmRestoreBackup = () => {
   }
 };
 
-function openAddCountryModal() {
-  document.getElementById('add-country-modal').classList.remove('hidden');
-}
-
-function closeAddCountryModal() {
-  document.getElementById('add-country-modal').classList.add('hidden');
-}
-
 window.addEventListener('DOMContentLoaded', () => {
-  loadLang(currentLang);
   let state = loadGameState();
-  applyTranslation(state);
+  updateTurnDisplay(state);
   renderCountryDropdown(state);
 
   document.getElementById('end-turn').addEventListener('click', () => {
     nextTurn();
     state = loadGameState();
-    applyTranslation(state);
-    renderCountryList(state);
+	updateTurnDisplay(state);
+    renderCountryDropdown(state);
   });
 
 // Выпадающий список для выбора или создания страны
