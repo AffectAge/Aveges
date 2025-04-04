@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Arcanorum GPS</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-[#1c1f26] text-white font-sans overflow-hidden">
+
+  <!-- Top Bar -->
+  <div class="flex justify-between items-center h-14 px-2 bg-[#2a2e39] border-b border-black shadow z-20">
+    <div class="flex items-center gap-4">
+      <img src="assets/icons/flag.png" alt="flag" class="w-16 h-12 rounded bg-gray-600" />
+      <div class="flex items-center gap-2">
+</div>
+
+<!-- Кнопка и выпадающее меню -->
+<div class="relative inline-block text-left">
+  <button id="dropdown-button" type="button" class="inline-flex justify-between items-center w-56 rounded-md bg-[#3a3e4a] px-4 py-2 text-sm font-medium text-yellow-400 shadow-sm hover:bg-[#4a4e5a]">
+    <span id="current-country-label">Выбрать страну</span>
+    <svg class="-mr-1 ml-2 h-5 w-5 text-gray-300" viewBox="0 0 20 20" fill="currentColor">
+      <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.293l3.71-4.06a.75.75 0 111.08 1.04l-4.25 4.65a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
+    </svg>
+  </button>
+
+  <div id="dropdown-menu" class="hidden absolute z-40 mt-2 w-56 rounded-md bg-[#2a2e39] shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none p-2 space-y-1">
+    <!-- Список стран добавляется динамически -->
+  </div>
+</div>
+
+<div id="country-list" class="flex flex-col gap-2 text-sm"></div>
+
+<!-- Модальное окно добавления страны -->
+<div id="add-country-modal" class="fixed inset-0 bg-black bg-opacity-60 z-50 hidden flex items-center justify-center">
+  <div class="bg-[#2a2e39] rounded-xl shadow-xl p-6 w-[320px] max-w-full text-white flex flex-col gap-4">
+    <div class="text-lg font-semibold">Добавить страну</div>
+    <input id="new-country-name" type="text" placeholder="Название страны"
+           class="bg-[#3a3e4a] text-white px-3 py-2 rounded">
+    <p id="country-error" class="text-red-400 text-sm hidden">Ошибка</p>
+    <div class="flex justify-between gap-2">
+      <button id="confirm-add-country" class="flex-1 bg-green-600 hover:bg-green-700 text-white font-semibold px-4 py-2 rounded">
+        Добавить
+      </button>
+      <button id="cancel-add-country" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-semibold px-4 py-2 rounded">
+        Отмена
+      </button>
+    </div>
+  </div>
+</div>
+
+
+
+
+</select>
+
+    </div>
+    <div class="flex items-center gap-4 text-sm text-gray-300">
+      <span>Ход: <span class="text-white font-semibold" id="turn-display">1</span></span>
+      <select id="lang-select" class="bg-[#3a3e4a] text-white px-2 py-1 rounded border-none">
+        <option value="ru">RU</option>
+        <option value="en">EN</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Left Menu -->
+  <div class="absolute top-14 bottom-14 left-2 w-[0px] bg-[#2a2e39] flex flex-col items-start py-4 shadow-lg gap-2 z-10">
+    <div class="relative group ml-2">
+      <button class="w-12 h-12 bg-[#3a3e4a] rounded-full hover:bg-[#4a4e5a] transition-transform transform hover:scale-110 duration-200">⚔️</button>
+      <span class="absolute left-14 top-1/2 -translate-y-1/2 bg-[#444] text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-50">
+        Армия
+      </span>
+    </div>
+    <div class="relative group ml-2">
+      <button class="w-12 h-12 bg-[#3a3e4a] rounded-full hover:bg-[#4a4e5a] transition-transform transform hover:scale-110 duration-200">🔬</button>
+      <span class="absolute left-14 top-1/2 -translate-y-1/2 bg-[#444] text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-50">
+        Наука
+      </span>
+    </div>
+  </div>
+
+  <!-- Map Canvas -->
+  <canvas id="hexCanvas"></canvas>
+
+  <!-- Notifications Panel -->
+  <div class="absolute top-14 bottom-14 right-0 w-[240px] bg-[#2a2e39]/70 px-3 py-3 text-sm shadow-inner backdrop-blur-md z-10">
+    <div class="text-gray-300 font-semibold mb-2">Уведомления</div>
+    <div class="text-gray-400 text-xs">Уведомления появятся здесь</div>
+  </div>
+
+  <!-- Info Panel -->
+  <div class="absolute top-14 bottom-14 right-[240px] w-[180px] bg-[#232630]/80 px-3 py-2 text-sm shadow-inner z-10 backdrop-blur">
+    <div class="text-gray-300 font-semibold mb-2">Информация</div>
+    <div class="text-gray-400 text-xs">Выделите объект на карте</div>
+  </div>
+
+  <!-- Bottom Menu -->
+  <div class="absolute bottom-0 left-0 right-0 h-14 px-4 bg-[#2a2e39] flex items-center justify-start gap-4 z-20 shadow-md">
+    <!-- Экономика -->
+    <div class="relative group">
+      <button class="flex items-center gap-2 px-4 py-2 w-48 bg-gradient-to-r from-[#2a2e39] to-[#2a2e39] 
+                     rounded-md hover:from-[#3b3f50] hover:to-[#4a4e5a] text-white font-medium 
+                     shadow-md border border-[#4a4e5a] transition-all duration-300">
+        <img src="assets/icons/economy_button.png" alt="Экономика" class="w-5 h-5" />
+        <span class="text-sm break-words w-full">Экономика</span>
+      </button>
+      <div class="absolute bottom-full left-0 mb-0 hidden group-hover:flex flex-col 
+                  bg-[#2e3240]/90 backdrop-blur-md rounded-lg border border-[#4a4e5a] shadow-xl z-40 
+                  min-w-[12rem] max-w-[20rem] w-auto 
+                  opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 
+                  transition-all duration-300 px-1">
+        <button class="flex items-start gap-2 px-4 py-2 text-sm hover:bg-[#4a4e5a] transition-all rounded-t-md">
+          <img src="assets/icons/economy_button.png" alt="Торговля" class="w-5 h-5" />
+          <span class="text-sm break-words w-full text-left">Торговля</span>
+        </button>
+        <button class="flex items-start gap-2 px-4 py-2 text-sm hover:bg-[#4a4e5a] transition-all rounded-b-md">
+          <img src="assets/icons/economy_button.png" alt="Бюджет" class="w-5 h-5" />
+          <span class="text-sm break-words w-full text-left">Статистика расходов государства</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Кнопка Сохранения -->
+    <div class="relative group">
+      <button class="flex items-center gap-2 px-4 py-2 w-48 bg-gradient-to-r from-[#2a2e39] to-[#2a2e39] 
+                     rounded-md hover:from-[#3b3f50] hover:to-[#4a4e5a] text-white font-medium 
+                     shadow-md border border-[#4a4e5a] transition-all duration-300">
+        💾
+        <span class="text-sm break-words w-full">Сохранения</span>
+      </button>
+      <div class="absolute bottom-full left-0 mb-0 hidden group-hover:flex flex-col 
+                  bg-[#2e3240]/90 backdrop-blur-md rounded-lg border border-[#4a4e5a] shadow-xl z-40 
+                  min-w-[12rem] max-w-[20rem] w-auto 
+                  opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 
+                  transition-all duration-300 px-1">
+        <button onclick="createBackup()" class="flex items-start gap-2 px-4 py-2 text-sm hover:bg-[#4a4e5a] transition-all rounded-t-md">
+          📦 <span class="text-sm break-words w-full text-left">Создать сохранение</span>
+        </button>
+        <button onclick="promptRestoreBackup()" class="flex items-start gap-2 px-4 py-2 text-sm hover:bg-[#4a4e5a] transition-all rounded-b-md">
+          ♻️ <span class="text-sm break-words w-full text-left">Загрузить сохранение</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Кнопка хода -->
+    <div class="ml-auto mr-2">
+      <button id="end-turn" class="bg-yellow-600 hover:bg-yellow-700 text-white font-semibold px-4 py-2 rounded-md shadow transition-all">
+        Закончить ход
+      </button>
+    </div>
+  </div>
+
+  <!-- Hex Map -->
+  <script type="module">
+    import { drawHexMap } from './code/hexmap.js';
+    drawHexMap('hexCanvas');
+  </script>
+
+<!-- Save Modal -->
+<div id="backup-modal" class="fixed inset-0 bg-black bg-opacity-60 z-50 hidden items-center justify-center">
+  <div class="bg-[#2a2e39] rounded-xl shadow-xl p-6 w-[320px] max-w-full text-white flex flex-col gap-4">
+    <div class="text-lg font-semibold">Загрузить сохранение</div>
+
+    <select id="backup-select" class="bg-[#3a3e4a] text-white px-2 py-2 rounded w-full">
+      <option disabled selected>Выберите сохранение</option>
+    </select>
+
+    <div class="flex justify-between gap-2">
+      <button onclick="confirmRestoreBackup()" class="flex-1 bg-green-600 hover:bg-green-700 text-white font-semibold px-4 py-2 rounded">Загрузить</button>
+      <button onclick="closeBackupModal()" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-semibold px-4 py-2 rounded">Отмена</button>
+    </div>
+  </div>
+</div>
+  <!-- Renderer -->
+  <script src="renderer.js"></script>
+</body>
+</html>

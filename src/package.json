@@ -1,0 +1,12 @@
+{
+  "name": "arcanorum-gps",
+  "version": "1.0.0",
+  "description": "Global strategy game on Electron",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "devDependencies": {
+    "electron": "^27.0.0"
+  }
+}
