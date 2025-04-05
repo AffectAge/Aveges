@@ -1,4 +1,4 @@
-// drawHexMap.js (оптимизированная отрисовка карты один раз с прогресс-баром)
+// drawHexMap.js (с поддержкой слоёв карты)
 import SimplexNoise from './simplex-noise.js';
 
 export async function drawHexMap(canvasId, regenerate = false) {
@@ -7,70 +7,26 @@ export async function drawHexMap(canvasId, regenerate = false) {
   canvas.width = window.innerWidth;
   canvas.height = window.innerHeight;
 
+  window.mapLayers = window.mapLayers || {
+    hexBorders: true,
+    continentOverlay: true
+  };
+
+  window.redrawHexGrid = () => drawGrid();
+  window.hexTextureCache = {}; // глобальный доступ к кэшу
+
   const fs = window.require('fs');
   const path = window.require('path');
   const settingsPath = path.join('data', 'world_generation_settings.json');
   const mapDir = path.join('data', 'map');
-
-  const defaultSettings = {
-    seed: 'default',
-    rows: 500,
-    cols: 1000,
-    zoom: 0.07,
-    continent_count: 3,
-    continent_size: 0.4,
-    terrain_types: {
-      water: { threshold: 0.3, texture: "water.png" },
-      plain: { threshold: 0.5, texture: "plain.png" },
-      forest: { threshold: 0.75, texture: "forest.png" },
-      mountain: { threshold: 1.0, texture: "mountain.png" }
-    }
-  };
-
-  if (!fs.existsSync(settingsPath)) {
-    fs.writeFileSync(settingsPath, JSON.stringify(defaultSettings, null, 2), 'utf-8');
-  }
+  const continentsPath = path.join(mapDir, 'continents');
 
   const settings = JSON.parse(fs.readFileSync(settingsPath, 'utf-8'));
-  const { seed, rows, cols, zoom, continent_count, continent_size, terrain_types } = settings;
+  const { seed, rows, cols, zoom, terrain_types } = settings;
 
-  const progressBox = document.getElementById('mapProgress');
-  const progressBar = document.getElementById('mapProgressBar');
-  const updateProgress = (percent) => {
-    if (progressBox && progressBar) {
-      progressBox.style.display = 'block';
-      progressBox.style.opacity = '1';
-      progressBar.style.width = `${percent}%`;
-    }
-  };
-  const hideProgress = () => {
-    if (progressBox) {
-      progressBox.style.opacity = '0';
-      setTimeout(() => {
-        progressBox.style.display = 'none';
-      }, 500);
-    }
-  };
-
-  const makeSeededRandom = (seed) => {
-    let x = [...seed].reduce((acc, char) => (acc << 5) - acc + char.charCodeAt(0), 0);
-    return () => {
-      x ^= x << 13;
-      x ^= x >> 17;
-      x ^= x << 5;
-      return (x >>> 0) / 0xFFFFFFFF;
-    };
-  };
-
-  const rng = makeSeededRandom(seed);
-  const simplex = new SimplexNoise(rng);
-
-  const continentCenters = Array.from({ length: continent_count }, () => ({
-    x: Math.floor(rng() * cols),
-    y: Math.floor(rng() * rows)
-  }));
-
+  const simplex = new SimplexNoise(() => Math.random());
   const textureCache = {};
+
   const loadTextures = async () => {
     const fallback = new Image();
     fallback.src = 'assets/terrain/default_terrain.png';
@@ -86,58 +42,17 @@ export async function drawHexMap(canvasId, regenerate = false) {
 
   await loadTextures();
 
-  if (!fs.existsSync(mapDir)) {
-    fs.mkdirSync(mapDir, { recursive: true });
-  } else if (regenerate) {
-    fs.readdirSync(mapDir).forEach(file => fs.unlinkSync(path.join(mapDir, file)));
-  }
-
   const getHexId = (row, col) => row * cols + col;
-  const getNeighbors = (row, col) => {
-    const even = col % 2 === 0;
-    const directions = even ? [[-1, 0], [-1, -1], [0, -1], [1, 0], [0, 1], [-1, 1]] : [[-1, 0], [0, -1], [1, -1], [1, 0], [1, 1], [0, 1]];
-    return directions.map(([dr, dc]) => {
-      const nr = row + dr, nc = col + dc;
-      return (nr >= 0 && nr < rows && nc >= 0 && nc < cols) ? getHexId(nr, nc) : null;
-    }).filter(id => id !== null);
-  };
 
-  const mapData = [];
+  const mapData = fs.readdirSync(mapDir)
+    .filter(f => f.endsWith('.json'))
+    .map(f => JSON.parse(fs.readFileSync(path.join(mapDir, f), 'utf-8')));
 
-  if (fs.readdirSync(mapDir).length === 0) {
-    const total = rows * cols;
-    let current = 0;
-
-    for (let row = 0; row < rows; row++) {
-      for (let col = 0; col < cols; col++) {
-        const nx = col * zoom, ny = row * zoom;
-        let noise = (simplex.noise2D(nx, ny) + 1) / 2;
-        for (const { x, y } of continentCenters) {
-          const dx = (col - x) / cols, dy = (row - y) / rows;
-          const dist = Math.hypot(dx, dy);
-          noise += Math.max(0, 1 - dist / continent_size) * 0.5;
-        }
-        noise = Math.min(noise, 1);
-        const terrain = Object.entries(terrain_types).find(([_, { threshold }]) => noise <= threshold)?.[0] || 'unknown';
-        const id = getHexId(row, col);
-        const neighbors = getNeighbors(row, col);
-
-        const hexData = { id, row, col, terrain, neighbors };
-        mapData.push(hexData);
-        fs.writeFileSync(path.join(mapDir, `hex_${id}.json`), JSON.stringify(hexData, null, 2), 'utf-8');
-
-        current++;
-        if (current % 500 === 0 || current === total) {
-          updateProgress(Math.floor((current / total) * 100));
-          await new Promise(r => setTimeout(r, 0));
-        }
-      }
-    }
-    hideProgress();
-  } else {
-    for (const file of fs.readdirSync(mapDir).filter(f => f.endsWith('.json'))) {
-      const hexData = JSON.parse(fs.readFileSync(path.join(mapDir, file), 'utf-8'));
-      mapData.push(hexData);
+  const continentMap = {};
+  if (fs.existsSync(path.join(continentsPath, 'continent_groups.json'))) {
+    const data = JSON.parse(fs.readFileSync(path.join(continentsPath, 'continent_groups.json')));
+    for (const { id, hexes } of data) {
+      for (const hexId of hexes) continentMap[hexId] = id;
     }
   }
 
@@ -147,10 +62,9 @@ export async function drawHexMap(canvasId, regenerate = false) {
   const getHexWidth = () => getHexSize() * 2;
   const getHexHeight = () => Math.sqrt(3) * getHexSize();
 
-  const hexTextureCache = {};
   const getCachedHexTexture = (terrain, size) => {
-    const key = `${terrain}_${size}`;
-    if (hexTextureCache[key]) return hexTextureCache[key];
+    const key = `${terrain}_${size}_${window.mapLayers.hexBorders}`;
+    if (window.hexTextureCache[key]) return window.hexTextureCache[key];
 
     const offCanvas = document.createElement('canvas');
     offCanvas.width = size * 2;
@@ -168,10 +82,13 @@ export async function drawHexMap(canvasId, regenerate = false) {
     offCtx.clip();
     offCtx.drawImage(textureCache[terrain] || textureCache['__fallback'], 0, 0, size * 2, size * 2);
     offCtx.restore();
-    offCtx.strokeStyle = '#333';
-    offCtx.stroke();
 
-    hexTextureCache[key] = offCanvas;
+    if (window.mapLayers.hexBorders) {
+      offCtx.strokeStyle = '#333';
+      offCtx.stroke();
+    }
+
+    window.hexTextureCache[key] = offCanvas;
     return offCanvas;
   };
 
@@ -182,31 +99,39 @@ export async function drawHexMap(canvasId, regenerate = false) {
     y - hexSize < canvas.height
   );
 
-  const drawHex = (x, y, size, terrain) => {
-    const cached = getCachedHexTexture(terrain, size);
-    ctx.drawImage(cached, x - size, y - size);
-  };
+  const continentColors = ['#94d82d88', '#4dabf788', '#e8590c88', '#cc5de888', '#845ef788'];
 
-  const drawGrid = () => {
+  function drawGrid() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     const hexSize = getHexSize();
     const horizDist = 0.75 * getHexWidth();
     const vertDist = getHexHeight();
 
-    for (const { row, col, terrain } of mapData) {
+    for (const { row, col, terrain, id } of mapData) {
       const x = col * horizDist + offsetX + 60;
       const y = row * vertDist + ((col % 2) * (vertDist / 2)) + offsetY + 60;
-      if (isHexVisible(x, y, hexSize)) {
-        drawHex(x, y, hexSize, terrain);
+      if (!isHexVisible(x, y, hexSize)) continue;
+      ctx.drawImage(getCachedHexTexture(terrain, hexSize), x - hexSize, y - hexSize);
+      if (window.mapLayers.continentOverlay && continentMap[id] !== undefined) {
+        ctx.beginPath();
+        for (let i = 0; i < 6; i++) {
+          const angle = Math.PI / 3 * i;
+          const px = x + hexSize * Math.cos(angle);
+          const py = y + hexSize * Math.sin(angle);
+          i ? ctx.lineTo(px, py) : ctx.moveTo(px, py);
+        }
+        ctx.closePath();
+        ctx.fillStyle = continentColors[continentMap[id] % continentColors.length];
+        ctx.fill();
       }
     }
-  };
+  }
 
-  let isDragging = false, dragStart = { x: 0, y: 0 };
   canvas.addEventListener('mousedown', e => {
     isDragging = true;
     dragStart = { x: e.clientX, y: e.clientY };
   });
+  let isDragging = false, dragStart = { x: 0, y: 0 };
   canvas.addEventListener('mousemove', e => {
     if (isDragging) {
       offsetX += e.clientX - dragStart.x;
@@ -221,7 +146,7 @@ export async function drawHexMap(canvasId, regenerate = false) {
     e.preventDefault();
     scale *= e.deltaY < 0 ? 1.1 : 1 / 1.1;
     scale = Math.max(0.3, Math.min(4, scale));
-    Object.keys(hexTextureCache).forEach(k => delete hexTextureCache[k]);
+    window.hexTextureCache = {};
     drawGrid();
   });
 

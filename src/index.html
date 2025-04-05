@@ -101,15 +101,16 @@
     hexBorders: true
   };
 
-  document.getElementById('toggleContinent').addEventListener('change', (e) => {
-    window.mapLayers.continentOverlay = e.target.checked;
-    if (window.redrawHexGrid) window.redrawHexGrid();
-  });
-
   document.getElementById('toggleBorders').addEventListener('change', (e) => {
-    window.mapLayers.hexBorders = e.target.checked;
-    if (window.redrawHexGrid) window.redrawHexGrid();
-  });
+  window.mapLayers.hexBorders = e.target.checked;
+  window.hexTextureCache = {};
+  if (window.redrawHexGrid) window.redrawHexGrid();
+});
+
+document.getElementById('toggleContinent').addEventListener('change', (e) => {
+  window.mapLayers.continentOverlay = e.target.checked;
+  if (window.redrawHexGrid) window.redrawHexGrid();
+});
 </script>
 
   <!-- Map Canvas -->
