@@ -1,6 +1,0 @@
-l_english:
-TURN:0 "Turn"
-PLAYER:0 "Player"
-END_TURN:0 "End Turn"
-CITY:0 "City"
-NOT_YOURS:0 "This is not your city"

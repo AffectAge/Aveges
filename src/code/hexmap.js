@@ -6,12 +6,6 @@ export async function drawHexMap(canvasId, regenerate = false) {
   canvas.width  = window.innerWidth;
   canvas.height = window.innerHeight;
 
-  window.mapLayers = window.mapLayers || {
-    hexBorders: true,
-    continentOverlay: true,
-    climateOverlay: true  // слой климатической информации
-  };
-
   window.redrawHexGrid = () => drawGrid();
   window.hexTextureCache = {}; // глобальный кэш текстур
 
@@ -20,7 +14,9 @@ export async function drawHexMap(canvasId, regenerate = false) {
   const settingsPath = path.join('data', 'world_generation_settings.json');
   const mapDir       = path.join('data', 'map');
   const continentsPath = path.join(mapDir, 'continents');
-
+  let mapData = [];
+  const hexmapPath = path.join(mapDir, "hexmap.json");
+  
   // Создаем директории, если их нет
   if (!fs.existsSync('data')) fs.mkdirSync('data');
   if (!fs.existsSync(mapDir)) fs.mkdirSync(mapDir);
@@ -153,7 +149,9 @@ export async function drawHexMap(canvasId, regenerate = false) {
   }
 
   // Формирование карты (сетка гексов)
-  const mapData = [];
+  if (!regenerate && fs.existsSync(hexmapPath)) {
+  mapData = JSON.parse(fs.readFileSync(hexmapPath, "utf-8"));
+} else {
   for (let row = 0; row < rows; row++) {
     for (let col = 0; col < cols; col++) {
       const id = getHexId(row, col);
@@ -223,7 +221,8 @@ export async function drawHexMap(canvasId, regenerate = false) {
   }
 
   // Сохраняем итоговую карту в hexmap.json
-  fs.writeFileSync(path.join(mapDir, "hexmap.json"), JSON.stringify(mapData, null, 2), "utf-8");
+  fs.writeFileSync(hexmapPath, JSON.stringify(mapData, null, 2), "utf-8");
+  }
 
   // Функция кэширования текстур для гексов (без зазоров)
   const getCachedHexTexture = (terrain, size) => {
@@ -285,6 +284,24 @@ export async function drawHexMap(canvasId, regenerate = false) {
 
   // Изначально центрируем карту
   updateAlignment();
+  
+  // Центр карты
+const centerRow = Math.floor(rows / 2);
+const centerCol = Math.floor(cols / 2);
+
+// Центрирование и масштаб
+scale = 0.1; // или 1, или 1.5 — подбери под свой экран
+
+const hexSize = baseHexSize * scale;
+const horizDist = hexSize * 1.5;
+const vertDist  = Math.sqrt(3) * hexSize;
+
+const centerX = centerCol * horizDist;
+const centerY = centerRow * vertDist + ((centerCol % 2) ? (vertDist / 2) : 0);
+
+// Центрируем карту по экрану
+offsetX = canvas.width / 2 - centerX;
+offsetY = canvas.height / 2 - centerY;
 
   function drawGrid() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -348,8 +365,76 @@ if (window.mapLayers.continentOverlay) {
         ctx.fill();
         ctx.restore();
       }
+	  
+	  // Отображение ID гекса
+const visible = (
+  x + hexSize > 0 &&
+  x - hexSize < canvas.width &&
+  y + hexSize > 0 &&
+  y - hexSize < canvas.height
+);
+
+if (window.mapLayers.hexIdOverlay && scale > 0.3 && visible) {
+  ctx.save();
+  ctx.fillStyle = "#ffffff";
+  ctx.font = `${Math.max(8, hexSize * 0.35)}px sans-serif`;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.strokeStyle = "#000000";
+  ctx.lineWidth = 2;
+  ctx.strokeText(cell.id, x, y);
+  ctx.fillText(cell.id, x, y);
+  ctx.restore();
+}
+
     }
   }
+  
+  const infoBox = document.getElementById("hex-info");
+canvas.addEventListener("mousemove", (e) => {
+  if (isDragging) return;
+
+  const rect = canvas.getBoundingClientRect();
+  const mouseX = e.clientX - rect.left;
+  const mouseY = e.clientY - rect.top;
+
+  const hexSize = getHexSize();
+  const horizDist = hexSize * 1.5;
+  const vertDist = Math.sqrt(3) * hexSize;
+
+  let found = null;
+
+  for (const cell of mapData) {
+    let x = cell.col * horizDist + offsetX;
+    let y = cell.row * vertDist + ((cell.col % 2) * (vertDist / 2)) + offsetY;
+
+    const dx = mouseX - x;
+    const dy = mouseY - y;
+    if (Math.sqrt(dx * dx + dy * dy) < hexSize) {
+      found = cell;
+      break;
+    }
+  }
+
+  if (found) {
+    const neighborIds = found.neighbors.join(', ');
+    infoBox.innerHTML = `
+  <div><span class="text-yellow-400 font-semibold">ID:</span> ${found.id}</div>
+  <div><span class="text-yellow-400 font-semibold">Соседи:</span> ${neighborIds}</div>
+  <div><span class="text-yellow-400 font-semibold">Ландшафт:</span> ${found.terrain}</div>
+  <div><span class="text-yellow-400 font-semibold">Климат:</span> ${found.climate}</div>
+  <div><span class="text-yellow-400 font-semibold">Континент:</span> ${found.continent}</div>
+  <div><span class="text-yellow-400 font-semibold">Высота:</span> ${found.elevation.toFixed(2)}</div>
+  <div><span class="text-yellow-400 font-semibold">Температура:</span> ${found.temperature.toFixed(2)}</div>
+  <div><span class="text-yellow-400 font-semibold">Осадки:</span> ${found.precipitation.toFixed(2)}</div>
+`;
+    infoBox.style.left = `${e.clientX + 12}px`;
+    infoBox.style.top = `${e.clientY + 12}px`;
+    infoBox.classList.remove("hidden");
+  } else {
+    infoBox.classList.add("hidden");
+  }
+});
 
   // Обработчики событий: перетаскивание и масштабирование
   let isDragging = false, dragStart = { x: 0, y: 0 };
@@ -365,6 +450,17 @@ if (window.mapLayers.continentOverlay) {
       drawGrid();
     }
   });
+  
+  // Скрытие информации о гексе при наведении на другие элементы интерфейса
+  document.addEventListener("mousemove", (e) => {
+  const canvas = document.getElementById("hexCanvas");
+  const infoBox = document.getElementById("hex-info");
+
+  if (!canvas.contains(e.target)) {
+    infoBox.classList.add("hidden");
+  }
+});
+
   canvas.addEventListener("mouseup", () => isDragging = false);
   canvas.addEventListener("mouseleave", () => isDragging = false);
   canvas.addEventListener("wheel", e => {
@@ -375,6 +471,14 @@ if (window.mapLayers.continentOverlay) {
     updateAlignment();
     drawGrid();
   });
+
+  // Кнопка перегенерация карты
+  document.getElementById("regenerateMapBtn").addEventListener("click", async () => {
+  const confirmReset = confirm("Ты точно хочешь перегенерировать карту? Все ручные изменения будут потеряны.");
+  if (confirmReset) {
+    await drawHexMap("hexCanvas", true);
+  }
+});
 
   drawGrid();
 }

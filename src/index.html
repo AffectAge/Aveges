@@ -58,7 +58,7 @@
     <div class="flex items-center gap-4 text-sm text-gray-300">
      <span>Ход: <span class="text-white font-semibold" id="turn-display"></span></span>
     </div>
-	
+
   </div>
 
 <!-- Left Menu -->
@@ -74,7 +74,7 @@
     <span class="absolute left-14 top-1/2 -translate-y-1/2 bg-[#444] text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-50">
       Наука
     </span>
-  </div>
+	</div>
   
   <!-- Слои карты -->
   <div class="relative group ml-2">
@@ -97,6 +97,10 @@
   <input type="checkbox" id="toggleClimate" class="accent-yellow-500">
   Климат
 </label>
+<label class="flex items-center gap-2 text-sm text-white">
+  <input type="checkbox" id="toggleHexId" class="accent-yellow-500">
+  ID гексов
+</label>
     </div>
   </div>
 </div>
@@ -105,7 +109,8 @@
   window.mapLayers = {
     continentOverlay: false,
 	climateOverlay: false,
-    hexBorders: true
+    hexBorders: true,
+	hexIdOverlay: false
   };
 
   document.getElementById('toggleBorders').addEventListener('change', (e) => {
@@ -124,10 +129,18 @@ document.getElementById('toggleClimate').addEventListener('change', (e) => {
   if (window.redrawHexGrid) window.redrawHexGrid();
 });
 
+document.getElementById('toggleHexId').addEventListener('change', (e) => {
+  window.mapLayers.hexIdOverlay = e.target.checked;
+  if (window.redrawHexGrid) window.redrawHexGrid();
+});
+
 </script>
 
   <!-- Map Canvas -->
   <canvas id="hexCanvas"></canvas>
+  
+  <!-- Инфо по гексу -->
+<div id="hex-info" class="absolute bg-[#2e3240] text-white text-xs px-3 py-2 rounded shadow-xl z-10 pointer-events-none hidden"></div>
 
   <!-- Notifications Panel -->
   <div class="absolute top-14 bottom-14 right-0 w-[240px] bg-[#2a2e39]/70 px-3 py-3 text-sm shadow-inner backdrop-blur-md z-10">
@@ -189,6 +202,11 @@ document.getElementById('toggleClimate').addEventListener('change', (e) => {
         Закончить ход
       </button>
     </div>
+	
+	 <div class="relative group ml-0">
+  <button id="regenerateMapBtn"
+    class="w-10 h-10 bg-yellow-600 rounded-md hover:bg-yellow-700 transition-transform transform hover:scale-110 duration-200">♻️</button>
+</div>
   </div>
   
 <!-- Прогресс генерации карты -->
