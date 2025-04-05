@@ -16,7 +16,7 @@ function initGameState() {
     const defaultState = {
       turn: 1,
       current_country: "Украина",
-      countrys: ["Украина"]
+      countries: ["Украина"]
     };
     fs.writeFileSync(statePath, JSON.stringify(defaultState, null, 2), 'utf-8');
     console.log("Файл 'state.json' создан автоматически.");
@@ -36,9 +36,9 @@ function saveGameState(state) {
 
 function nextTurn() {
   const state = loadGameState();                     // загружаем текущее состояние
-  const idx = state.countrys.indexOf(state.current_player); // определяем индекс текущего игрока
-  const next = (idx + 1) % state.countrys.length;     // выбираем следующего игрока по кругу
-  state.current_country = state.countrys[next];        // обновляем текущего игрока
+  const idx = state.countries.indexOf(state.current_player); // определяем индекс текущего игрока
+  const next = (idx + 1) % state.countries.length;     // выбираем следующего игрока по кругу
+  state.current_country = state.countries[next];        // обновляем текущего игрока
   if (next === 0) state.turn++;                      // если круг завершён — увеличить номер хода
   saveGameState(state);                              // сохраняем изменения
 }

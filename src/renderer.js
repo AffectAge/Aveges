@@ -1,4 +1,3 @@
-
 const { ipcRenderer } = require('electron');
 const fs = require('fs');
 const path = require('path');
@@ -77,7 +76,7 @@ window.addEventListener('DOMContentLoaded', () => {
 
   label.textContent = state.current_country || 'Выбрать страну';
 
-  state.countrys.forEach(country => {
+  state.countries.forEach(country => {
     const row = document.createElement('div');
     row.className = 'flex justify-between items-center bg-[#3a3e4a] hover:bg-[#4a4e5a] px-2 py-1 rounded text-sm text-white cursor-pointer';
 
@@ -99,9 +98,9 @@ window.addEventListener('DOMContentLoaded', () => {
       e.stopPropagation();
       if (!confirm(`Удалить страну "${country}"?`)) return;
       const s = loadGameState();
-      s.countrys = s.countrys.filter(c => c !== country);
+      s.countries = s.countries.filter(c => c !== country);
       if (s.current_country === country) {
-        s.current_country = s.countrys[0] || '';
+        s.current_country = s.countries[0] || '';
       }
       saveGameState(s);
       renderCountryDropdown(s);
@@ -136,7 +135,7 @@ document.getElementById('confirm-add-country').addEventListener('click', () => {
   }
 
   const s = loadGameState();
-  if (s.countrys.includes(name)) {
+  if (s.countries.includes(name)) {
     error.textContent = "Такая страна уже есть";
     error.classList.remove('hidden');
     input.select();
@@ -144,7 +143,7 @@ document.getElementById('confirm-add-country').addEventListener('click', () => {
   }
 
   // всё ок — добавляем
-  s.countrys.push(name);
+  s.countries.push(name);
   s.current_country = name;
   saveGameState(s);
 
