@@ -1,0 +1,6 @@
+l_russian:
+TURN:0 "Ход"
+PLAYER:0 "Игрок"
+END_TURN:0 "Закончить ход"
+CITY:0 "Город"
+NOT_YOURS:0 "Это не ваш город"

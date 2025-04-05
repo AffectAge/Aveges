@@ -91,6 +91,10 @@
         <input type="checkbox" id="toggleBorders" class="accent-yellow-500" checked>
         Границы гексов
       </label>
+	  <label class="flex items-center gap-2 text-sm text-white">
+  <input type="checkbox" id="toggleClimate" class="accent-yellow-500" checked>
+  Климат
+</label>
     </div>
   </div>
 </div>
@@ -111,6 +115,12 @@ document.getElementById('toggleContinent').addEventListener('change', (e) => {
   window.mapLayers.continentOverlay = e.target.checked;
   if (window.redrawHexGrid) window.redrawHexGrid();
 });
+
+document.getElementById('toggleClimate').addEventListener('change', (e) => {
+  window.mapLayers.climateOverlay = e.target.checked;
+  if (window.redrawHexGrid) window.redrawHexGrid();
+});
+
 </script>
 
   <!-- Map Canvas -->
