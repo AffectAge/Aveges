@@ -1,0 +1,26 @@
+{
+  "seed": "default2",
+  "rows": 50,
+  "cols": 100,
+  "zoom": 0.07,
+  "continent_count": 3,
+  "continent_size": 0.4,
+  "terrain_types": {
+    "water": {
+      "threshold": 0.3,
+      "texture": "water.png"
+    },
+    "plain": {
+      "threshold": 0.5,
+      "texture": "plain.png"
+    },
+    "forest": {
+      "threshold": 0.75,
+      "texture": "forest.png"
+    },
+    "mountain": {
+      "threshold": 1,
+      "texture": "mountain.png"
+    }
+  }
+}

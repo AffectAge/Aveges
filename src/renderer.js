@@ -3,11 +3,8 @@ const { ipcRenderer } = require('electron');
 const fs = require('fs');
 const path = require('path');
 
-const { loadLang, t } = require('./code/lang');
 const { loadGameState, nextTurn, saveGameState } = require('./code/state');
 const { createBackup, listBackups, restoreBackup } = require('./code/backup');
-
-let currentLang = localStorage.getItem('lang') || 'ru';
 
 function updateTurnDisplay(state) {
   document.getElementById('turn-display').innerText = state.turn;
