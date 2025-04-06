@@ -7,17 +7,14 @@
 </head>
 <body class="bg-[#1c1f26] text-white font-sans overflow-hidden">
 
-  <!-- Верхняя панель -->
+  <!-- Top Bar -->
   <div class="flex justify-between items-center h-14 px-2 bg-[#2a2e39] border-b border-black shadow z-20">
     <div class="flex items-center gap-4">
-	
-	  <!-- Отображение флага выбранной страны -->
       <img id="current-flag" src="assets/icons/flag.png" alt="flag" class="w-16 h-12 rounded bg-gray-600" />
-	  
       <div class="flex items-center gap-2">
 </div>
 
-<!-- Выпадающий список выбора страны -->
+<!-- Кнопка и выпадающее меню -->
 <div class="relative inline-block text-left">
   <button id="dropdown-button" type="button" class="inline-flex justify-between items-center w-56 rounded-md bg-[#3a3e4a] px-4 py-2 text-sm font-medium text-yellow-400 shadow-sm hover:bg-[#4a4e5a]">
     <span id="current-country-label">Выбрать страну</span>
@@ -67,225 +64,140 @@
 
   </div>
 
-<!-- Левая панель -->
+<!-- Left Menu -->
 <div class="absolute top-14 bottom-14 left-2 w-[0px] flex flex-col items-start py-4 gap-2 z-10">
-    
-  <!-- Кнопка армия -->
   <div class="relative group ml-2">
     <button class="w-12 h-12 bg-[#3a3e4a] rounded-full hover:bg-[#4a4e5a] transition-transform transform hover:scale-110 duration-200">⚔️</button>
     <span class="absolute left-14 top-1/2 -translate-y-1/2 bg-[#444] text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-50">
       Армия
     </span>
   </div>
-  
-  <!-- Кнопка наука -->
   <div class="relative group ml-2">
     <button class="w-12 h-12 bg-[#3a3e4a] rounded-full hover:bg-[#4a4e5a] transition-transform transform hover:scale-110 duration-200">🔬</button>
     <span class="absolute left-14 top-1/2 -translate-y-1/2 bg-[#444] text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-50">
       Наука
     </span>
 	</div>
-	
-	<!-- Кнопка окна колонизации -->
-  <div class="relative group ml-2">
-    <button onclick="openColonizationModal()" class="w-12 h-12 bg-[#3a3e4a] rounded-full hover:bg-[#4a4e5a] transition-transform transform hover:scale-110 duration-200">🏳️</button>
-    <span class="absolute left-14 top-1/2 -translate-y-1/2 bg-[#444] text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-50">
-      Колонизация
-    </span>
-	</div>
-			 
-  <!-- Кнопка слои карты -->
-  <div class="relative group ml-2">
   
+  <!-- Слои карты -->
+  <div class="relative group ml-2">
     <button class="w-12 h-12 bg-[#3a3e4a] rounded-full hover:bg-[#4a4e5a] transition-transform transform hover:scale-110 duration-200">🗺️</button>
     <span class="absolute left-14 top-1/2 -translate-y-1/2 bg-[#444] text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-50">
       Слои
     </span>
-	
-	<!-- Откритие списка слоев карты -->
     <div class="absolute top-0 left-14 bg-[#2e3240]/90 backdrop-blur-md rounded-lg border border-[#4a4e5a] shadow-xl z-50
                 min-w-[12rem] px-3 py-2 hidden group-hover:block">
       <div class="text-sm font-semibold mb-2 text-white">Слои карты</div>
-	  
-	  <!-- Континенты -->
       <label class="flex items-center gap-2 text-sm text-white">
         <input type="checkbox" id="toggleContinent" class="accent-yellow-500">
         Континенты
       </label>
-	  
-	  <!-- Границы гексов -->
       <label class="flex items-center gap-2 text-sm text-white">
-        <input type="checkbox" id="toggleBorders" class="accent-yellow-500">
+        <input type="checkbox" id="toggleBorders" class="accent-yellow-500" checked>
         Границы гексов
       </label>
-	  
-	  <!-- Климат -->
 	  <label class="flex items-center gap-2 text-sm text-white">
-      <input type="checkbox" id="toggleClimate" class="accent-yellow-500">
-      Климат
-      </label>
-      
-	  <!-- ID гексов -->
-      <label class="flex items-center gap-2 text-sm text-white">
-      <input type="checkbox" id="toggleHexId" class="accent-yellow-500">
-      ID гексов
-      </label>
+  <input type="checkbox" id="toggleClimate" class="accent-yellow-500">
+  Климат
+</label>
+<label class="flex items-center gap-2 text-sm text-white">
+  <input type="checkbox" id="toggleHexId" class="accent-yellow-500">
+  ID гексов
+</label>
 
-      <!-- Границы государств -->
-      <label class="flex items-center gap-2 text-sm text-white">
-      <input type="checkbox" id="toggleOwner" class="accent-yellow-500">
-      Границы государств
-      </label>
-	  
-	  <!-- Колонизация -->
-      <label class="flex items-center gap-2 text-sm text-white">
-      <input type="checkbox" id="toggleColonization" class="accent-yellow-500">
-      Колонизация
-      </label>
-
-	  
+<label class="flex items-center gap-2 text-sm text-white">
+  <input type="checkbox" id="toggleOwner" class="accent-yellow-500">
+  Границы государств
+</label>
     </div>
-	
   </div>
-  
 </div>
 
 <script>
-
-<!-- Стандартные значения слоев карты (включены или выключены при запуске -->
   window.mapLayers = {
     continentOverlay: false,
 	climateOverlay: false,
-    hexBorders: false,
+    hexBorders: true,
 	hexIdOverlay: false,
-	ownerOverlay: false,
-	colonizationOverlay: false
+	ownerOverlay: false
   };
-  
-<!-- Обработчик границ гексов -->
+
   document.getElementById('toggleBorders').addEventListener('change', (e) => {
   window.mapLayers.hexBorders = e.target.checked;
   window.hexTextureCache = {};
   if (window.redrawHexGrid) window.redrawHexGrid();
 });
 
-<!-- Обработчик континентов -->
 document.getElementById('toggleContinent').addEventListener('change', (e) => {
   window.mapLayers.continentOverlay = e.target.checked;
   if (window.redrawHexGrid) window.redrawHexGrid();
 });
 
-<!-- Обработчик климата -->
 document.getElementById('toggleClimate').addEventListener('change', (e) => {
   window.mapLayers.climateOverlay = e.target.checked;
   if (window.redrawHexGrid) window.redrawHexGrid();
 });
 
-<!-- Обработчик id гексов -->
 document.getElementById('toggleHexId').addEventListener('change', (e) => {
   window.mapLayers.hexIdOverlay = e.target.checked;
   if (window.redrawHexGrid) window.redrawHexGrid();
 });
 
-<!-- Обработчик границ государств -->
 document.getElementById('toggleOwner').addEventListener('change', (e) => {
   window.mapLayers.ownerOverlay = e.target.checked;
   if (window.redrawHexGrid) window.redrawHexGrid();
-  
 });
 
-<!-- Обработчик колонизируемых территорий -->
-document.getElementById('toggleColonization').addEventListener('change', (e) => {
-  window.mapLayers.colonizationOverlay = e.target.checked;
-  if (window.redrawHexGrid) window.redrawHexGrid();
-});
 
 </script>
 
-  <!-- Карта мира -->
+  <!-- Map Canvas -->
   <canvas id="hexCanvas"></canvas>
   
-  <!-- Вывод информации об гексе -->
+  <!-- Инфо по гексу -->
 <div id="hex-info" class="absolute bg-[#2e3240] text-white text-xs px-3 py-2 rounded shadow-xl z-10 pointer-events-none hidden"></div>
 
-  <!-- Панель уведомлений -->
+  <!-- Notifications Panel -->
   <div class="absolute top-14 bottom-14 right-0 w-[240px] bg-[#2a2e39]/70 px-3 py-3 text-sm shadow-inner backdrop-blur-md z-10">
     <div class="text-gray-300 font-semibold mb-2">Уведомления</div>
     <div class="text-gray-400 text-xs">Уведомления появятся здесь</div>
   </div>
 
-<!-- Нижнее меню -->
-<div class="absolute bottom-0 left-0 right-0 h-14 px-4 bg-[#2a2e39] flex items-center justify-between z-20 shadow-md">
-
-  <!-- Левая часть: Экономика -->
-  <div class="relative group">
-    <button class="flex items-center gap-2 px-4 py-2 w-48 bg-gradient-to-r from-[#2a2e39] to-[#2a2e39] 
-                   rounded-md hover:from-[#3b3f50] hover:to-[#4a4e5a] text-white font-medium 
-                   shadow-md border border-[#4a4e5a] transition-all duration-300">
-      <img src="assets/icons/economy_button.png" alt="Экономика" class="w-5 h-5" />
-      <span class="text-sm break-words w-full">Экономика</span>
-    </button>
-
-    <!-- Подменю экономика -->
-    <div class="absolute bottom-full left-0 mb-0 hidden group-hover:flex flex-col 
-                bg-[#2e3240]/90 backdrop-blur-md rounded-lg border border-[#4a4e5a] shadow-xl z-40 
-                min-w-[12rem] max-w-[20rem] w-auto 
-                opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 
-                transition-all duration-300 px-1">
-      <button id="openBudgetButton" class="flex items-start gap-2 px-4 py-2 text-sm hover:bg-[#4a4e5a] transition-all rounded-t-md">
-        <img src="assets/icons/economy_button.png" alt="Бюджет" class="w-5 h-5" />
-        <span class="text-sm break-words w-full text-left">Бюджет</span>
-      </button>
-      <button class="flex items-start gap-2 px-4 py-2 text-sm hover:bg-[#4a4e5a] transition-all rounded-b-md">
-        <img src="assets/icons/economy_button.png" alt="Статистика" class="w-5 h-5" />
-        <span class="text-sm break-words w-full text-left">Статистика расходов государства</span>
-      </button>
-    </div>
-  </div>
-
-  <!-- Правая часть: Сохранения, карта, конец хода -->
-  <div class="flex items-center gap-2">
-
-    <!-- Сохранения -->
+  <!-- Bottom Menu -->
+  <div class="absolute bottom-0 left-0 right-0 h-14 px-4 bg-[#2a2e39] flex items-center justify-start gap-4 z-20 shadow-md">
+    <!-- Экономика -->
     <div class="relative group">
-      <button onclick="openSaveManagerModal()" class="flex items-center gap-2 px-4 py-2 w-48 
-        bg-gradient-to-r from-[#2a2e39] to-[#2a2e39] 
-        rounded-md hover:from-[#3b3f50] hover:to-[#4a4e5a] 
-        text-white font-medium shadow-md border border-[#4a4e5a] 
-        transition-all duration-300">
-        💾
-        <span class="text-sm break-words w-full">Сохранения</span>
+      <button class="flex items-center gap-2 px-4 py-2 w-48 bg-gradient-to-r from-[#2a2e39] to-[#2a2e39] 
+                     rounded-md hover:from-[#3b3f50] hover:to-[#4a4e5a] text-white font-medium 
+                     shadow-md border border-[#4a4e5a] transition-all duration-300">
+        <img src="assets/icons/economy_button.png" alt="Экономика" class="w-5 h-5" />
+        <span class="text-sm break-words w-full">Экономика</span>
       </button>
-    </div>
-
-    <!-- Кнопка перегенерации карты -->
-    <div class="relative group">
-      <button id="regenerateMapBtn"
-        class="w-10 h-10 bg-yellow-600 rounded-md hover:bg-yellow-700 transition-transform transform hover:scale-110 duration-200">
-        ♻️
-      </button>
-    </div>
-
-    <!-- Кнопка конца хода -->
-    <div>
-      <button id="end-turn"
-        class="bg-yellow-600 hover:bg-yellow-700 text-white font-semibold px-4 py-2 rounded-md shadow transition-all">
-        Закончить ход
-      </button>
-    </div>
-  </div>
-</div>
-
+      <div class="absolute bottom-full left-0 mb-0 hidden group-hover:flex flex-col 
+                  bg-[#2e3240]/90 backdrop-blur-md rounded-lg border border-[#4a4e5a] shadow-xl z-40 
+                  min-w-[12rem] max-w-[20rem] w-auto 
+                  opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 
+                  transition-all duration-300 px-1">
+        <button class="flex items-start gap-2 px-4 py-2 text-sm hover:bg-[#4a4e5a] transition-all rounded-t-md">
+          <img src="assets/icons/economy_button.png" alt="Торговля" class="w-5 h-5" />
+          <span class="text-sm break-words w-full text-left">Торговля</span>
+        </button>
+        <button class="flex items-start gap-2 px-4 py-2 text-sm hover:bg-[#4a4e5a] transition-all rounded-b-md">
+          <img src="assets/icons/economy_button.png" alt="Бюджет" class="w-5 h-5" />
+          <span class="text-sm break-words w-full text-left">Статистика расходов государства</span>
+        </button>
+      </div>
 	  
-	<!-- Модальное окно бюджета страны -->
-<div id="countryBudgetModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 hidden transition-opacity duration-300">
-  <div class="bg-neutral-900 text-white rounded-2xl shadow-2xl w-full max-w-6xl p-6 relative border border-neutral-700">
+	  <!-- Модальное окно бюджета страны -->
+<!-- Модальное окно бюджета страны в стиле интерфейса -->
+<div id="countryBudgetModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 hidden">
+  <div class="bg-neutral-900 text-white rounded-2xl shadow-2xl w-full max-w-4xl p-6 relative border border-neutral-700">
     <div class="flex items-center justify-between mb-4">
       <h2 class="text-2xl font-bold text-yellow-400">Бюджет страны</h2>
       <button id="closeBudgetModal" class="text-gray-400 hover:text-red-500 transition text-xl">&#x2715;</button>
     </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
       <!-- Круговая диаграмма доходов -->
       <div class="bg-neutral-800 rounded-xl p-4 border border-neutral-700">
         <h3 class="text-lg font-semibold mb-2 text-green-400">Доходы</h3>
@@ -298,23 +210,8 @@ document.getElementById('toggleColonization').addEventListener('change', (e) => 
         <canvas id="expenseChart"></canvas>
       </div>
 
-      <!-- Таблица категорий -->
-      <div class="bg-neutral-800 rounded-xl p-4 border border-neutral-700 overflow-y-auto max-h-[28rem] col-span-1 md:col-span-1.5">
-        <h3 class="text-lg font-semibold mb-2 text-white">Категории</h3>
-        <div class="grid grid-cols-2 gap-6 text-sm">
-          <div>
-            <p class="text-green-400 font-semibold">Доходы:</p>
-            <ul id="incomeList" class="space-y-1"></ul>
-          </div>
-          <div>
-            <p class="text-red-400 font-semibold">Расходы:</p>
-            <ul id="expenseList" class="space-y-1"></ul>
-          </div>
-        </div>
-      </div>
-
       <!-- Сводка -->
-      <div class="col-span-1 md:col-span-3 bg-neutral-800 rounded-xl p-4 border border-neutral-700">
+      <div class="col-span-1 md:col-span-2 bg-neutral-800 rounded-xl p-4 border border-neutral-700">
         <h3 class="text-lg font-semibold mb-2 text-blue-400">Сводка</h3>
         <div class="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
           <div>
@@ -333,29 +230,35 @@ document.getElementById('toggleColonization').addEventListener('change', (e) => 
       </div>
     </div>
   </div>
-</div>  
-
 </div>
 
-<!-- Модальное окно управления сохранениями -->
-<div id="saveManagerModal" class="fixed inset-0 bg-black bg-opacity-60 z-50 hidden items-center justify-center">
-  <div class="bg-[#2a2e39] rounded-xl shadow-xl p-6 w-[400px] max-w-full text-white flex flex-col gap-4">
-    <div class="text-lg font-semibold">Управление сохранениями</div>
-    
-	<input id="backup-name-input" type="text" placeholder="Название сохранения"
-  class="bg-[#3a3e4a] text-white px-3 py-2 rounded" />
-  
-    <div class="flex flex-col gap-2 max-h-60 overflow-y-auto" id="save-list">
-      <!-- Список сохранений генерируется динамически -->
+<button id="openBudgetButton" class="ml-2 px-3 py-1 bg-blue-600 text-white rounded-xl hover:bg-blue-700 text-sm">
+  💰 Бюджет
+</button>
+
+	  
     </div>
 
-    <div class="flex gap-2">
-      <button onclick="createBackupAndReloadList()" class="flex-1 bg-green-600 hover:bg-green-700 px-3 py-2 rounded">➕ Создать</button>
-      <button onclick="closeSaveManagerModal()" class="flex-1 bg-red-600 hover:bg-red-700 px-3 py-2 rounded">✖ Закрыть</button>
-    </div>
-  </div>
-</div>
-
+    <!-- Кнопка Сохранения -->
+    <div class="relative group">
+      <button class="flex items-center gap-2 px-4 py-2 w-48 bg-gradient-to-r from-[#2a2e39] to-[#2a2e39] 
+                     rounded-md hover:from-[#3b3f50] hover:to-[#4a4e5a] text-white font-medium 
+                     shadow-md border border-[#4a4e5a] transition-all duration-300">
+        💾
+        <span class="text-sm break-words w-full">Сохранения</span>
+      </button>
+      <div class="absolute bottom-full left-0 mb-0 hidden group-hover:flex flex-col 
+                  bg-[#2e3240]/90 backdrop-blur-md rounded-lg border border-[#4a4e5a] shadow-xl z-40 
+                  min-w-[12rem] max-w-[20rem] w-auto 
+                  opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 
+                  transition-all duration-300 px-1">
+        <button onclick="createBackup()" class="flex items-start gap-2 px-4 py-2 text-sm hover:bg-[#4a4e5a] transition-all rounded-t-md">
+          📦 <span class="text-sm break-words w-full text-left">Создать сохранение</span>
+        </button>
+        <button onclick="promptRestoreBackup()" class="flex items-start gap-2 px-4 py-2 text-sm hover:bg-[#4a4e5a] transition-all rounded-b-md">
+          ♻️ <span class="text-sm break-words w-full text-left">Загрузить сохранение</span>
+        </button>
+      </div>
     </div>
 
     <!-- Кнопка хода -->
@@ -363,20 +266,7 @@ document.getElementById('toggleColonization').addEventListener('change', (e) => 
       <button id="end-turn" class="bg-yellow-600 hover:bg-yellow-700 text-white font-semibold px-4 py-2 rounded-md shadow transition-all">
         Закончить ход
       </button>
-
     </div>
-	
-		<!-- Кнопка Сохранения -->
-<div class="relative group">
-  <button onclick="openSaveManagerModal()" class="flex items-center gap-2 px-4 py-2 w-48 
-    bg-gradient-to-r from-[#2a2e39] to-[#2a2e39] 
-    rounded-md hover:from-[#3b3f50] hover:to-[#4a4e5a] 
-    text-white font-medium shadow-md border border-[#4a4e5a] 
-    transition-all duration-300">
-    💾
-    <span class="text-sm break-words w-full">Сохранения</span>
-  </button>
-</div>
 	
 	 <div class="relative group ml-0">
   <button id="regenerateMapBtn"
@@ -435,28 +325,8 @@ document.getElementById('toggleColonization').addEventListener('change', (e) => 
     </div>
   </div>
 </div>
-
-<!-- Контекстное меню гекса -->
-<div id="hexContextMenu" class="fixed z-50 hidden bg-[#2e3240] border border-[#4a4e5a] rounded-md shadow-lg text-white text-sm w-48">
-  <button id="colonizeHexBtn" class="block w-full px-4 py-2 text-left hover:bg-[#3b3f50]">Колонизировать</button>
-</div>
-
-<!-- Модальное окно колонизации -->
-<div id="colonizationModal" class="fixed inset-0 z-50 hidden bg-black/50 flex items-center justify-center">
-  <div class="bg-[#1e1f29] rounded-2xl shadow-2xl w-[520px] max-h-[80vh] overflow-y-auto p-6 border border-gray-700 text-white">
-    <div class="flex justify-between items-center mb-5">
-      <h2 class="text-2xl font-bold text-green-400">🏳️ Колонизация</h2>
-      <button onclick="document.getElementById('colonizationModal').classList.add('hidden')"
-              class="text-gray-400 hover:text-white text-2xl leading-none">&times;</button>
-    </div>
-    <div id="colonizationList" class="space-y-5"></div>
-  </div>
-</div>
-
-  <!-- Модули -->
-  <!-- Обязательно перед renderer.js -->
+  <!-- Modules -->
   <script src="renderer.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
 </body>
 </html>

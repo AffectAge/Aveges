@@ -4,39 +4,24 @@ const path = require('path');
 const dataDir = path.join(__dirname, '../data');
 const backupDir = path.join(__dirname, '../backups');
 
-function copyRecursiveSync(src, dest) {
-  const stats = fs.statSync(src);
-
-  if (stats.isDirectory()) {
-    if (!fs.existsSync(dest)) fs.mkdirSync(dest);
-    const files = fs.readdirSync(src);
-    for (const file of files) {
-      copyRecursiveSync(path.join(src, file), path.join(dest, file));
-    }
-  } else {
-    fs.copyFileSync(src, dest);
-  }
-}
-
-function createBackup(name = null) {
+function createBackup() {
   if (!fs.existsSync(backupDir)) {
-    fs.mkdirSync(backupDir, { recursive: true });
+    fs.mkdirSync(backupDir);
   }
 
-  const finalName = name || `backup-${new Date().toISOString().replace(/[:.]/g, '-')}`;
-  const backupPath = path.join(backupDir, finalName);
+  const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+  const backupPath = path.join(backupDir, `backup-${timestamp}`);
   fs.mkdirSync(backupPath);
 
   const files = fs.readdirSync(dataDir);
   for (const file of files) {
     const src = path.join(dataDir, file);
     const dest = path.join(backupPath, file);
-    copyRecursiveSync(src, dest);
+    fs.copyFileSync(src, dest);
   }
 
   console.log(`Backup created: ${backupPath}`);
 }
-
 
 function listBackups() {
   if (!fs.existsSync(backupDir)) {
@@ -55,11 +40,10 @@ function restoreBackup(backupName) {
   for (const file of files) {
     const src = path.join(backupPath, file);
     const dest = path.join(dataDir, file);
-    copyRecursiveSync(src, dest);
+    fs.copyFileSync(src, dest);
   }
 
   console.log(`Backup "${backupName}" restored to data/`);
 }
-
 
 module.exports = { createBackup, listBackups, restoreBackup };
