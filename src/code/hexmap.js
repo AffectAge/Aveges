@@ -9,6 +9,125 @@ export async function drawHexMap(canvasId, regenerate = false) {
   window.redrawHexGrid = () => drawGrid();
   window.hexTextureCache = {}; // глобальный кэш текстур
   window.countryCache = {}; // кэш для данных стран
+  
+  const contextMenu = document.getElementById("hexContextMenu");
+const colonizeBtn = document.getElementById("colonizeHexBtn");
+let rightClickedHex = null;
+
+// ПКМ по гексу
+colonizeBtn.addEventListener("click", () => {
+    if (!rightClickedHex) return;
+
+    const state = window.require("./code/state").loadGameState();
+    const current = state.current_country;
+    const fs = window.require("fs");
+    const path = window.require("path");
+
+    const countryPath = path.join("data", "countries", current, `${current}.json`);
+    const settingsPath = path.join("data", "colonization_settings.json");
+
+    // Загружаем или создаём настройки
+    let settings = {
+      default_colonization_points: 10,
+      default_max_colonizations: 1
+    };
+
+    if (!fs.existsSync(settingsPath)) {
+      fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2), "utf-8");
+    } else {
+      settings = JSON.parse(fs.readFileSync(settingsPath, "utf-8"));
+    }
+
+    if (!fs.existsSync(countryPath)) return;
+    const countryData = JSON.parse(fs.readFileSync(countryPath, "utf-8"));
+
+    if (!countryData.colonizing_hexes) countryData.colonizing_hexes = [];
+    if (typeof countryData.colonization_points !== "number") {
+      countryData.colonization_points = settings.default_colonization_points;
+    }
+    if (typeof countryData.max_colonizations !== "number") {
+      countryData.max_colonizations = settings.default_max_colonizations;
+    }
+
+    if (countryData.colonizing_hexes.length >= countryData.max_colonizations) {
+      alert("Достигнут лимит колонизируемых гексов.");
+      return;
+    }
+
+    if (!rightClickedHex.colonization) rightClickedHex.colonization = {};
+    rightClickedHex.colonization[current] = 0;
+
+    if (!countryData.colonizing_hexes.includes(rightClickedHex.id)) {
+      countryData.colonizing_hexes.push(rightClickedHex.id);
+    }
+
+    const hexmapPath = path.join("data", "map", "hexmap.json");
+    const fullHexMap = JSON.parse(fs.readFileSync(hexmapPath, "utf-8"));
+    const hex = fullHexMap.find(h => h.id === rightClickedHex.id);
+    if (hex) {
+      if (!hex.colonization) hex.colonization = {};
+      hex.colonization[current] = 0;
+    }
+
+    fs.writeFileSync(hexmapPath, JSON.stringify(fullHexMap, null, 2), "utf-8");
+    fs.writeFileSync(countryPath, JSON.stringify(countryData, null, 2), "utf-8");
+
+    contextMenu.classList.add("hidden");
+    if (window.redrawHexGrid) window.redrawHexGrid();
+  });
+
+canvas.addEventListener("contextmenu", (e) => {
+  e.preventDefault();
+  const rect = canvas.getBoundingClientRect();
+  const mouseX = e.clientX - rect.left;
+  const mouseY = e.clientY - rect.top;
+
+  const hexSize = getHexSize();
+  const horizDist = hexSize * 1.5;
+  const vertDist = Math.sqrt(3) * hexSize;
+
+  let found = null;
+
+  for (const cell of mapData) {
+    let x = cell.col * horizDist + offsetX;
+    let y = cell.row * vertDist + ((cell.col % 2) * (vertDist / 2)) + offsetY;
+
+    const dx = mouseX - x;
+    const dy = mouseY - y;
+    if (Math.sqrt(dx * dx + dy * dy) < hexSize) {
+      found = cell;
+      break;
+    }
+  }
+
+  if (!found) return contextMenu.classList.add("hidden");
+
+  rightClickedHex = found;
+
+  const state = window.require("./code/state").loadGameState();
+  const current = state.current_country;
+  const countryPath = path.join("data", "countries", current, `${current}.json`);
+  if (!fs.existsSync(countryPath)) return;
+
+  const countryData = JSON.parse(fs.readFileSync(countryPath, "utf-8"));
+
+  // Условия: гекс без владельца, не превышен лимит
+  const already = (countryData.colonizing_hexes || []).includes(found.id);
+  const limit = countryData.max_colonizations || 3;
+
+  if (!found.owner && !already && (countryData.colonizing_hexes?.length || 0) < limit) {
+    colonizeBtn.style.display = "block";
+  } else {
+    colonizeBtn.style.display = "none";
+  }
+
+  contextMenu.style.left = `${e.clientX}px`;
+  contextMenu.style.top = `${e.clientY}px`;
+  contextMenu.classList.remove("hidden");
+});
+
+// Скрыть при клике вне
+document.addEventListener("click", () => contextMenu.classList.add("hidden"));
 
   const fs   = window.require('fs');
   const path = window.require('path');
