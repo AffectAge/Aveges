@@ -9,6 +9,8 @@ export async function drawHexMap(canvasId, regenerate = false) {
   window.redrawHexGrid = () => drawGrid();
   window.hexTextureCache = {}; // глобальный кэш текстур
   window.countryCache = {}; // кэш для данных стран
+  if (!window.flagCache) window.flagCache = {}; // кэш для флагов
+
   
   const contextMenu = document.getElementById("hexContextMenu");
 const colonizeBtn = document.getElementById("colonizeHexBtn");
@@ -523,6 +525,72 @@ if (window.mapLayers.ownerOverlay && cell.owner) {
   ctx.restore();
 }
 
+// Слой колонизируемых территорий
+if (window.mapLayers.colonizationOverlay && cell.colonization) {
+  const entries = Object.entries(cell.colonization);
+  if (entries.length > 0) {
+    const [leader, value] = entries.sort((a, b) => b[1] - a[1])[0];
+    const cost = cell.colonization_cost || 100;
+    const percent = Math.min(1, value / cost);
+
+    // Цвет из кэша или загрузить
+    let fillColor = "#888";
+    if (!window.countryCache[leader]) {
+      try {
+        const filePath = path.join("data", "countries", leader, `${leader}.json`);
+        if (fs.existsSync(filePath)) {
+          const data = JSON.parse(fs.readFileSync(filePath, "utf-8"));
+          window.countryCache[leader] = data.color || "#888";
+        }
+      } catch (err) {
+        console.warn("Не удалось загрузить цвет лидера:", err);
+      }
+    }
+    fillColor = window.countryCache[leader] || "#888";
+
+    // Заливка
+    ctx.save();
+    ctx.globalAlpha = 0.4 + percent * 0.4; // от 0.4 до 0.8
+    ctx.beginPath();
+    for (let i = 0; i < 6; i++) {
+      const angle = Math.PI / 3 * i;
+      const px = x + hexSize * Math.cos(angle);
+      const py = y + hexSize * Math.sin(angle);
+      i ? ctx.lineTo(px, py) : ctx.moveTo(px, py);
+    }
+    ctx.closePath();
+    ctx.fillStyle = fillColor;
+    ctx.fill();
+    ctx.restore();
+
+    // Отрисовать флаг
+    try {
+      const flagPath = path.join("data", "countries", leader, `${leader}.json`);
+      if (fs.existsSync(flagPath)) {
+        const flagData = JSON.parse(fs.readFileSync(flagPath, "utf-8"));
+        const img = new Image();
+        img.src = flagData.flag;
+        if (window.flagCache[leader]) {
+  ctx.drawImage(window.flagCache[leader], x - hexSize / 4, y - hexSize / 4, hexSize / 2, hexSize / 2);
+} else {
+  const flagPath = path.join("data", "countries", leader, `${leader}.json`);
+  if (fs.existsSync(flagPath)) {
+    const data = JSON.parse(fs.readFileSync(flagPath, "utf-8"));
+    const img = new Image();
+    img.src = data.flag;
+    img.onload = () => {
+      window.flagCache[leader] = img;
+      if (window.redrawHexGrid) window.redrawHexGrid(); // повторная отрисовка после загрузки
+    };
+  }
+}
+      }
+    } catch (e) {
+      console.warn("Не удалось отрисовать флаг:", e);
+    }
+  }
+}
+
 	  
 	  // Отображение ID гекса
 const visible = (
@@ -650,5 +718,48 @@ canvas.addEventListener("mousemove", (e) => {
   }
 });
 
+// Перезагрузка карты
+window.reloadHexMap = () => {
+  const fs = window.require("fs");
+  const path = window.require("path");
+  const hexmapPath = path.join("data", "map", "hexmap.json");
+
+  if (!fs.existsSync(hexmapPath)) {
+    console.warn("Файл карты не найден:", hexmapPath);
+    return;
+  }
+
+  try {
+    // 💾 Сохраняем текущую позицию и масштаб
+    const prevOffsetX = offsetX;
+    const prevOffsetY = offsetY;
+    const prevScale = scale;
+
+    const freshData = JSON.parse(fs.readFileSync(hexmapPath, "utf-8"));
+    mapData = freshData;
+    window.hexMapData = freshData;
+
+    // ⚠️ Не вызываем updateAlignment, а сохраняем позицию и масштаб вручную
+    offsetX = prevOffsetX;
+    offsetY = prevOffsetY;
+    scale = prevScale;
+
+    if (window.hexTextureCache) window.hexTextureCache = {};
+    if (window.redrawHexGrid) window.redrawHexGrid();
+    console.log("Карта перезагружена из hexmap.json");
+  } catch (e) {
+    console.error("Ошибка при чтении hexmap.json:", e);
+  }
+};
+
+// Авто обновление карты
+setInterval(() => {
+  if (window.reloadHexMap) {
+    window.reloadHexMap();
+    console.log("Карта перерисована");
+  }
+}, 10000); // каждые 10 секунд
+
+  
   drawGrid();
 }

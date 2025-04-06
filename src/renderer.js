@@ -784,5 +784,4 @@ function cancelColonization(hexId, countryName) {
   fs.writeFileSync(hexmapPath, JSON.stringify(hexmap, null, 2), "utf-8");
 }
 
-window.openColonizationModal = openColonizationModal;
 });

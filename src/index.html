@@ -137,6 +137,13 @@
       Границы государств
       </label>
 	  
+	  <!-- Колонизация -->
+      <label class="flex items-center gap-2 text-sm text-white">
+      <input type="checkbox" id="toggleColonization" class="accent-yellow-500">
+      Колонизация
+      </label>
+
+	  
     </div>
 	
   </div>
@@ -151,7 +158,8 @@
 	climateOverlay: false,
     hexBorders: false,
 	hexIdOverlay: false,
-	ownerOverlay: false
+	ownerOverlay: false,
+	colonizationOverlay: false
   };
   
 <!-- Обработчик границ гексов -->
@@ -186,6 +194,11 @@ document.getElementById('toggleOwner').addEventListener('change', (e) => {
   
 });
 
+<!-- Обработчик колонизируемых территорий -->
+document.getElementById('toggleColonization').addEventListener('change', (e) => {
+  window.mapLayers.colonizationOverlay = e.target.checked;
+  if (window.redrawHexGrid) window.redrawHexGrid();
+});
 
 </script>
 
@@ -440,9 +453,8 @@ document.getElementById('toggleOwner').addEventListener('change', (e) => {
   </div>
 </div>
 
-
-
-  <!-- Modules -->
+  <!-- Модули -->
+  <!-- Обязательно перед renderer.js -->
   <script src="renderer.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
