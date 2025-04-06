@@ -10,7 +10,7 @@
   <!-- Top Bar -->
   <div class="flex justify-between items-center h-14 px-2 bg-[#2a2e39] border-b border-black shadow z-20">
     <div class="flex items-center gap-4">
-      <img src="assets/icons/flag.png" alt="flag" class="w-16 h-12 rounded bg-gray-600" />
+      <img id="current-flag" src="assets/icons/flag.png" alt="flag" class="w-16 h-12 rounded bg-gray-600" />
       <div class="flex items-center gap-2">
 </div>
 
@@ -36,6 +36,9 @@
     <div class="text-lg font-semibold">Добавить страну</div>
     <input id="new-country-name" type="text" placeholder="Название страны"
            class="bg-[#3a3e4a] text-white px-3 py-2 rounded">
+    <input id="new-country-color" type="color" value="#ffcc00" class="w-full h-10 border rounded" />
+<input id="new-country-flag" type="file" accept=".png" 
+       class="bg-[#3a3e4a] text-white px-3 py-2 rounded" />
     <p id="country-error" class="text-red-400 text-sm hidden">Ошибка</p>
     <div class="flex justify-between gap-2">
       <button id="confirm-add-country" class="flex-1 bg-green-600 hover:bg-green-700 text-white font-semibold px-4 py-2 rounded">
@@ -101,6 +104,11 @@
   <input type="checkbox" id="toggleHexId" class="accent-yellow-500">
   ID гексов
 </label>
+
+<label class="flex items-center gap-2 text-sm text-white">
+  <input type="checkbox" id="toggleOwner" class="accent-yellow-500">
+  Границы государств
+</label>
     </div>
   </div>
 </div>
@@ -110,7 +118,8 @@
     continentOverlay: false,
 	climateOverlay: false,
     hexBorders: true,
-	hexIdOverlay: false
+	hexIdOverlay: false,
+	ownerOverlay: false
   };
 
   document.getElementById('toggleBorders').addEventListener('change', (e) => {
@@ -133,6 +142,12 @@ document.getElementById('toggleHexId').addEventListener('change', (e) => {
   window.mapLayers.hexIdOverlay = e.target.checked;
   if (window.redrawHexGrid) window.redrawHexGrid();
 });
+
+document.getElementById('toggleOwner').addEventListener('change', (e) => {
+  window.mapLayers.ownerOverlay = e.target.checked;
+  if (window.redrawHexGrid) window.redrawHexGrid();
+});
+
 
 </script>
 
@@ -172,6 +187,56 @@ document.getElementById('toggleHexId').addEventListener('change', (e) => {
           <span class="text-sm break-words w-full text-left">Статистика расходов государства</span>
         </button>
       </div>
+	  
+	  <!-- Модальное окно бюджета страны -->
+<!-- Модальное окно бюджета страны в стиле интерфейса -->
+<div id="countryBudgetModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 hidden">
+  <div class="bg-neutral-900 text-white rounded-2xl shadow-2xl w-full max-w-4xl p-6 relative border border-neutral-700">
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="text-2xl font-bold text-yellow-400">Бюджет страны</h2>
+      <button id="closeBudgetModal" class="text-gray-400 hover:text-red-500 transition text-xl">&#x2715;</button>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <!-- Круговая диаграмма доходов -->
+      <div class="bg-neutral-800 rounded-xl p-4 border border-neutral-700">
+        <h3 class="text-lg font-semibold mb-2 text-green-400">Доходы</h3>
+        <canvas id="incomeChart"></canvas>
+      </div>
+
+      <!-- Круговая диаграмма расходов -->
+      <div class="bg-neutral-800 rounded-xl p-4 border border-neutral-700">
+        <h3 class="text-lg font-semibold mb-2 text-red-400">Расходы</h3>
+        <canvas id="expenseChart"></canvas>
+      </div>
+
+      <!-- Сводка -->
+      <div class="col-span-1 md:col-span-2 bg-neutral-800 rounded-xl p-4 border border-neutral-700">
+        <h3 class="text-lg font-semibold mb-2 text-blue-400">Сводка</h3>
+        <div class="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
+          <div>
+            <p class="text-neutral-400">Общий доход:</p>
+            <p id="totalIncome" class="text-green-300 font-bold text-lg">0</p>
+          </div>
+          <div>
+            <p class="text-neutral-400">Общие расходы:</p>
+            <p id="totalExpenses" class="text-red-300 font-bold text-lg">0</p>
+          </div>
+          <div>
+            <p class="text-neutral-400">Баланс:</p>
+            <p id="balance" class="text-yellow-300 font-bold text-lg">0</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<button id="openBudgetButton" class="ml-2 px-3 py-1 bg-blue-600 text-white rounded-xl hover:bg-blue-700 text-sm">
+  💰 Бюджет
+</button>
+
+	  
     </div>
 
     <!-- Кнопка Сохранения -->
@@ -262,5 +327,6 @@ document.getElementById('toggleHexId').addEventListener('change', (e) => {
 </div>
   <!-- Modules -->
   <script src="renderer.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </body>
 </html>

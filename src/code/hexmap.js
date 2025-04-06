@@ -8,6 +8,7 @@ export async function drawHexMap(canvasId, regenerate = false) {
 
   window.redrawHexGrid = () => drawGrid();
   window.hexTextureCache = {}; // глобальный кэш текстур
+  window.countryCache = {}; // кэш для данных стран
 
   const fs   = window.require('fs');
   const path = window.require('path');
@@ -177,7 +178,7 @@ export async function drawHexMap(canvasId, regenerate = false) {
       
       const brightness = (terrainPixel.r + terrainPixel.g + terrainPixel.b) / (3 * 255);
 
-      mapData.push({ id, row, col, elevation: brightness, terrain: terrainType, climate: climateType, continent: continentType });
+      mapData.push({ id, row, col, elevation: brightness, terrain: terrainType, climate: climateType, continent: continentType, owner: "" });
     }
   }
 
@@ -366,6 +367,44 @@ if (window.mapLayers.continentOverlay) {
         ctx.restore();
       }
 	  
+	  // Слой владельца гекса
+if (window.mapLayers.ownerOverlay && cell.owner) {
+  const owner = cell.owner;
+  let fillColor = "#FF11E3";
+
+  if (!window.countryCache[owner]) {
+    try {
+      const countryPath = path.join("data", "countries", owner, `${owner}.json`);
+      if (fs.existsSync(countryPath)) {
+        const countryData = JSON.parse(fs.readFileSync(countryPath, 'utf-8'));
+        window.countryCache[owner] = countryData.color || "#FF11E3";
+      } else {
+        window.countryCache[owner] = "#FF11E3";
+      }
+    } catch (err) {
+      console.error("Ошибка при загрузке цвета страны:", err);
+      window.countryCache[owner] = "#FF11E3";
+    }
+  }
+
+  fillColor = window.countryCache[owner];
+
+  ctx.save();
+  ctx.globalAlpha = 0.6;
+  ctx.beginPath();
+  for (let i = 0; i < 6; i++) {
+    const angle = Math.PI / 3 * i;
+    const px = x + hexSize * Math.cos(angle);
+    const py = y + hexSize * Math.sin(angle);
+    i ? ctx.lineTo(px, py) : ctx.moveTo(px, py);
+  }
+  ctx.closePath();
+  ctx.fillStyle = fillColor;
+  ctx.fill();
+  ctx.restore();
+}
+
+	  
 	  // Отображение ID гекса
 const visible = (
   x + hexSize > 0 &&
@@ -419,6 +458,7 @@ canvas.addEventListener("mousemove", (e) => {
   if (found) {
     const neighborIds = found.neighbors.join(', ');
     infoBox.innerHTML = `
+  <div><span class="text-yellow-400 font-semibold">Государство:</span> ${found.owner}</div>
   <div><span class="text-yellow-400 font-semibold">ID:</span> ${found.id}</div>
   <div><span class="text-yellow-400 font-semibold">Соседи:</span> ${neighborIds}</div>
   <div><span class="text-yellow-400 font-semibold">Ландшафт:</span> ${found.terrain}</div>
@@ -464,13 +504,24 @@ canvas.addEventListener("mousemove", (e) => {
   canvas.addEventListener("mouseup", () => isDragging = false);
   canvas.addEventListener("mouseleave", () => isDragging = false);
   canvas.addEventListener("wheel", e => {
-    e.preventDefault();
-    scale *= e.deltaY < 0 ? 1.1 : 1 / 1.1;
-    scale = Math.max(0.03, Math.min(4, scale));
-    window.hexTextureCache = {};
-    updateAlignment();
-    drawGrid();
-  });
+  e.preventDefault();
+
+  const mouseX = e.offsetX;
+  const mouseY = e.offsetY;
+
+  const oldScale = scale;
+  const zoomFactor = 1.1;
+  scale *= e.deltaY < 0 ? zoomFactor : 1 / zoomFactor;
+  scale = Math.max(0.03, Math.min(4, scale));
+
+  // Корректируем смещение, чтобы зум был относительно курсора
+  const scaleRatio = scale / oldScale;
+  offsetX = mouseX - (mouseX - offsetX) * scaleRatio;
+  offsetY = mouseY - (mouseY - offsetY) * scaleRatio;
+
+  window.hexTextureCache = {};
+  drawGrid();
+});
 
   // Кнопка перегенерация карты
   document.getElementById("regenerateMapBtn").addEventListener("click", async () => {

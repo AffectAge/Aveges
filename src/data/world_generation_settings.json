@@ -1,0 +1,91 @@
+{
+  "seed": "default",
+  "rows": 100,
+  "cols": 150,
+  "zoom": 0.05,
+  "masks": {
+    "terrain": "assets/map/terrain_mask.png",
+    "climate": "assets/map/climate_mask.png",
+    "continent": "assets/map/continent_mask.png"
+  },
+  "terrain_types": {
+    "ocean": {
+      "texture": "ocean.png",
+      "maskColor": "#0000FF"
+    },
+    "beach": {
+      "texture": "beach.png",
+      "maskColor": "#FFFF00"
+    },
+    "plain": {
+      "texture": "plain.png",
+      "maskColor": "#00B515"
+    },
+    "desert": {
+      "texture": "desert.png",
+      "maskColor": "#F4A460"
+    },
+    "savanna": {
+      "texture": "savanna.png",
+      "maskColor": "#9ACD32"
+    },
+    "grassland": {
+      "texture": "grassland.png",
+      "maskColor": "#7CFC00"
+    },
+    "mountain": {
+      "texture": "mountain.png",
+      "maskColor": "#808080"
+    },
+    "snow": {
+      "texture": "snow.png",
+      "maskColor": "#FFFFFF"
+    },
+    "taiga": {
+      "texture": "taiga.png",
+      "maskColor": "#228B22"
+    },
+    "tundra": {
+      "texture": "tundra.png",
+      "maskColor": "#A9A9A9"
+    }
+  },
+  "climate_types": {
+    "arctic": {
+      "color": "#ADD8E6",
+      "maskColor": "#000080"
+    },
+    "temperate": {
+      "color": "#90EE90",
+      "maskColor": "#008000"
+    },
+    "tropical": {
+      "color": "#FFA07A",
+      "maskColor": "#FF4500"
+    }
+  },
+  "continent_types": {
+    "continentA": {
+      "color": "#FF3838",
+      "maskColor": "#8A2BE2"
+    },
+    "continentB": {
+      "color": "#FF3838",
+      "maskColor": "#20B2AA"
+    },
+    "continentC": {
+      "color": "#FF3838",
+      "maskColor": "#2121B7"
+    }
+  },
+  "climate": {
+    "tempZoom": 0.1,
+    "precipitationZoom": 0.1,
+    "precipitationOffset": 100
+  },
+  "elevation": {
+    "oceanThreshold": 0.3,
+    "beachThreshold": 0.35,
+    "mountainThreshold": 0.9
+  }
+}
