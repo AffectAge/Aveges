@@ -86,11 +86,14 @@
     </span>
 	</div>
 	
-		  
-	  <button onclick="openColonizationModal()" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
-  Колонизация
-</button>
-  
+	<!-- Кнопка окна колонизации -->
+  <div class="relative group ml-2">
+    <button onclick="openColonizationModal()" class="w-12 h-12 bg-[#3a3e4a] rounded-full hover:bg-[#4a4e5a] transition-transform transform hover:scale-110 duration-200">🏳️</button>
+    <span class="absolute left-14 top-1/2 -translate-y-1/2 bg-[#444] text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-50">
+      Колонизация
+    </span>
+	</div>
+			 
   <!-- Кнопка слои карты -->
   <div class="relative group ml-2">
   
@@ -426,7 +429,6 @@ document.getElementById('toggleOwner').addEventListener('change', (e) => {
 </div>
 
 <!-- Модальное окно колонизации -->
-<!-- Модальное окно колонизации -->
 <div id="colonizationModal" class="fixed inset-0 z-50 hidden bg-black/50 flex items-center justify-center">
   <div class="bg-[#1e1f29] rounded-2xl shadow-2xl w-[520px] max-h-[80vh] overflow-y-auto p-6 border border-gray-700 text-white">
     <div class="flex justify-between items-center mb-5">
@@ -437,6 +439,7 @@ document.getElementById('toggleOwner').addEventListener('change', (e) => {
     <div id="colonizationList" class="space-y-5"></div>
   </div>
 </div>
+
 
 
   <!-- Modules -->

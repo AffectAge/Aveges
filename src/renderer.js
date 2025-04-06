@@ -612,35 +612,70 @@ function openColonizationModal() {
     const cost = hex.colonization_cost || 100;
     const percent = Math.min(100, Math.round((progress / cost) * 100));
 
+    const colonizationPoints = country.colonization_points || 0;
+    const activeHexes = (country.colonizing_hexes || []).length || 1;
+    const pointsPerHex = Math.floor(colonizationPoints / activeHexes);
+    const turnsLeft = pointsPerHex > 0 ? Math.ceil((cost - progress) / pointsPerHex) : "∞";
+
     const hexDiv = document.createElement("div");
     hexDiv.className = "bg-[#2e2f3b] p-3 rounded-md";
 
-    hexDiv.innerHTML = `
-      <div class="flex justify-between items-center mb-1">
-        <div><strong>${hex.name || "Гекс"} (ID: ${hex.id})</strong></div>
-        <button class="text-red-400 hover:text-red-200 text-sm" data-id="${hex.id}">Отменить</button>
+    const header = document.createElement("div");
+    header.className = "flex justify-between items-center mb-2";
+
+    const title = document.createElement("div");
+    title.className = "text-base font-medium text-white";
+    title.innerHTML = `${hex.name || "Гекс"} <span class="text-gray-400 text-sm">(ID: ${hex.id})</span>`;
+
+    const cancelBtn = document.createElement("button");
+    cancelBtn.textContent = "Отменить";
+    cancelBtn.className = "text-red-400 hover:text-red-200 text-xs px-2 py-1 rounded border border-red-400";
+    cancelBtn.addEventListener("click", () => {
+      cancelColonization(hex.id, countryName);
+      openColonizationModal();
+      if (window.redrawHexGrid) window.redrawHexGrid();
+    });
+
+    header.appendChild(title);
+    header.appendChild(cancelBtn);
+    hexDiv.appendChild(header);
+
+    const progressBlock = document.createElement("div");
+    progressBlock.innerHTML = `
+      <div class="mb-1 text-xs text-gray-300">Ваш прогресс: ${percent}% &nbsp;&nbsp; ⏳ ~${turnsLeft} ход(ов)</div>
+      <div class="w-full bg-gray-800 rounded-full h-5 overflow-hidden mb-2">
+        <div class="bg-green-500 h-5 transition-all duration-300 ease-in-out" style="width: ${percent}%"></div>
       </div>
-      <div class="w-full bg-gray-700 rounded-full h-4 overflow-hidden">
-        <div class="bg-green-500 h-4" style="width: ${percent}%"></div>
-      </div>
-      <div class="text-right text-xs mt-1">${percent}%</div>
     `;
+    hexDiv.appendChild(progressBlock);
+
+    const others = Object.entries(hex.colonization || {}).filter(([key]) => key !== countryName);
+    if (others.length > 0) {
+      const otherProgress = document.createElement("div");
+      otherProgress.className = "space-y-1 mt-2";
+
+      others.forEach(([other, val]) => {
+        const p = Math.min(100, Math.round((val / cost) * 100));
+        const bar = document.createElement("div");
+        bar.innerHTML = `
+          <div class="text-xs text-gray-400">${other}: ${p}%</div>
+          <div class="w-full bg-gray-700 rounded-full h-2 overflow-hidden">
+            <div class="bg-yellow-500 h-2" style="width: ${p}%"></div>
+          </div>
+        `;
+        otherProgress.appendChild(bar);
+      });
+
+      hexDiv.appendChild(otherProgress);
+    }
 
     container.appendChild(hexDiv);
   });
 
   document.getElementById("colonizationModal").classList.remove("hidden");
-
-  // обработка кнопок "Отменить"
-  container.querySelectorAll("button[data-id]").forEach(btn => {
-    btn.addEventListener("click", () => {
-      const hexId = parseInt(btn.getAttribute("data-id"));
-      cancelColonization(hexId, countryName);
-      openColonizationModal(); // обновить окно
-      if (window.redrawHexGrid) window.redrawHexGrid();
-    });
-  });
 }
+
+window.openColonizationModal = openColonizationModal;
 
 function openColonizationModal() {
   const fs = require("fs");
@@ -677,7 +712,7 @@ const turnsLeft = pointsPerHex > 0 ? Math.ceil((cost - progress) / pointsPerHex)
     hexDiv.innerHTML = `
   <div class="flex justify-between items-center mb-2">
     <div class="text-base font-medium text-white">${hex.name || "Гекс:"} <span class="text-gray-400 text-sm">${hex.id}</span></div>
-    <button class="text-red-400 hover:text-red-200 text-xs px-2 py-1 rounded border border-red-400">Отменить</button>
+    <button class="text-red-400 hover:text-red-200 text-xs px-2 py-1 rounded border border-red-400" data-id="${hex.id}">Отменить</button>
   </div>
 
   <div class="mb-1 text-xs text-gray-300">Ваш прогресс: ${percent}% &nbsp;&nbsp; ⏳ ~${turnsLeft} ход(ов)</div>
