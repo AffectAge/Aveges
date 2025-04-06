@@ -75,6 +75,122 @@ if (fs.existsSync(countryPath)) {
 	updateTurnDisplay(state);
     renderCountryDropdown(state);
   });
+  
+  // Управление сохранениями
+window.openSaveManagerModal = () => {
+  const saves = listBackups();
+  const listContainer = document.getElementById("save-list");
+  const modal = document.getElementById("saveManagerModal");
+  const input = document.getElementById("backup-name-input");
+
+  listContainer.innerHTML = "";
+
+  if (saves.length === 0) {
+    const empty = document.createElement("div");
+    empty.textContent = "Нет сохранений.";
+    empty.className = "text-gray-400 text-sm";
+    listContainer.appendChild(empty);
+  } else {
+    saves.forEach(name => {
+      const row = document.createElement("div");
+      row.className = "flex justify-between items-center bg-[#3a3e4a] px-3 py-2 rounded";
+
+      const label = document.createElement("div");
+      label.textContent = name;
+      label.className = "truncate";
+
+      const actions = document.createElement("div");
+      actions.className = "flex gap-2";
+
+      const loadBtn = document.createElement("button");
+      loadBtn.textContent = "🔄";
+      loadBtn.title = "Загрузить";
+      loadBtn.className = "hover:text-green-400";
+      loadBtn.onclick = () => {
+        if (!confirm(`Ты точно хочешь загрузить сохранение "${name}"?\n⚠️ Текущий прогресс будет утерян.`)) return;
+        try {
+          restoreBackup(name);
+          alert(`Сохранение "${name}" загружено. Перезагрузка...`);
+          location.reload();
+        } catch (e) {
+          alert("Ошибка загрузки сохранения.");
+          console.error(e);
+        }
+      };
+
+      const delBtn = document.createElement("button");
+      delBtn.textContent = "🗑️";
+      delBtn.title = "Удалить";
+      delBtn.className = "hover:text-red-400";
+      delBtn.onclick = () => {
+        if (confirm(`Удалить сохранение "${name}"?`)) {
+          const fs = require("fs");
+          const path = require("path");
+          const backupPath = path.join("backups", name);
+          fs.rmSync(backupPath, { recursive: true, force: true });
+          openSaveManagerModal(); // перерисуем
+        }
+      };
+
+      actions.appendChild(loadBtn);
+      actions.appendChild(delBtn);
+      row.appendChild(label);
+      row.appendChild(actions);
+      listContainer.appendChild(row);
+    });
+  }
+
+  // Показываем модалку
+  modal.classList.remove("hidden");
+
+  // Удаляем фокус с кнопки, которая открыла окно
+  document.activeElement?.blur();
+
+  // Гарантируем фокус и выделение после полной отрисовки
+  setTimeout(() => {
+    input.value = "";
+    input.focus({ preventScroll: true });
+    input.select();
+  }, 100);
+};
+
+
+
+window.closeSaveManagerModal = () => {
+  document.getElementById("saveManagerModal").classList.add("hidden");
+};
+
+window.createBackupAndReloadList = () => {
+  const input = document.getElementById("backup-name-input");
+  const customName = input.value.trim();
+
+  if (!customName) {
+    alert("Введите название сохранения.");
+    return;
+  }
+
+  const state = loadGameState();
+  const turn = state.turn || 1;
+
+  const safeName = customName.replace(/[^a-zA-Zа-яА-Я0-9 _-]/gu, "_").trim();
+  const finalName = `${safeName}-Turn_${turn}`;
+
+  const existing = listBackups();
+  if (existing.includes(finalName)) {
+    alert(`Сохранение с именем "${finalName}" уже существует.`);
+    return;
+  }
+
+  try {
+    createBackup(finalName);
+    input.value = "";
+    openSaveManagerModal();
+  } catch (e) {
+    alert("Ошибка при создании сохранения.");
+    console.error(e);
+  }
+};
+
 
 // Выпадающий список для выбора или создания страны
   function renderCountryDropdown(state) {
@@ -233,7 +349,25 @@ document.getElementById("closeBudgetModal").addEventListener("click", () => {
   });
 
   // Пример функции показа модального окна с данными
+let incomeChartInstance = null;
+  let expenseChartInstance = null;
+
+  const modal = document.getElementById("countryBudgetModal");
+  const closeBtn = document.getElementById("closeBudgetModal");
+
+  closeBtn.addEventListener("click", () => {
+    modal.classList.add("opacity-0");
+    setTimeout(() => {
+      modal.classList.add("hidden");
+      modal.classList.remove("opacity-0");
+    }, 300);
+  });
+
   function showCountryBudgetModal(incomeData, expenseData) {
+    // Сортировка по убыванию
+    incomeData.sort((a, b) => b.value - a.value);
+    expenseData.sort((a, b) => b.value - a.value);
+
     const totalIncome = incomeData.reduce((sum, i) => sum + i.value, 0);
     const totalExpenses = expenseData.reduce((sum, i) => sum + i.value, 0);
     const balance = totalIncome - totalExpenses;
@@ -242,7 +376,40 @@ document.getElementById("closeBudgetModal").addEventListener("click", () => {
     document.getElementById("totalExpenses").textContent = totalExpenses.toLocaleString();
     document.getElementById("balance").textContent = balance.toLocaleString();
 
-    new Chart(document.getElementById("incomeChart"), {
+    if (incomeChartInstance) incomeChartInstance.destroy();
+    if (expenseChartInstance) expenseChartInstance.destroy();
+
+    const chartOptions = {
+      responsive: true,
+      plugins: {
+        datalabels: {
+          color: '#fff',
+          font: { weight: 'bold' },
+          formatter: (value, ctx) => {
+            const total = ctx.chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
+            const percentage = total ? ((value / total) * 100).toFixed(1) : "0";
+            return `${percentage}%`;
+          },
+          anchor: 'center',
+          align: 'center'
+        },
+        legend: {
+          display: true,
+          position: 'left',
+          labels: {
+            color: '#ccc',
+            padding: 10
+          }
+        },
+        tooltip: {
+          callbacks: {
+            label: (ctx) => `${ctx.label}: ${ctx.raw.toLocaleString()}`
+          }
+        }
+      }
+    };
+
+    incomeChartInstance = new Chart(document.getElementById("incomeChart"), {
       type: 'pie',
       data: {
         labels: incomeData.map(d => d.label),
@@ -251,10 +418,11 @@ document.getElementById("closeBudgetModal").addEventListener("click", () => {
           backgroundColor: incomeData.map(d => d.color),
         }]
       },
-      options: { responsive: true }
+      options: chartOptions,
+      plugins: [ChartDataLabels]
     });
 
-    new Chart(document.getElementById("expenseChart"), {
+    expenseChartInstance = new Chart(document.getElementById("expenseChart"), {
       type: 'pie',
       data: {
         labels: expenseData.map(d => d.label),
@@ -263,28 +431,101 @@ document.getElementById("closeBudgetModal").addEventListener("click", () => {
           backgroundColor: expenseData.map(d => d.color),
         }]
       },
-      options: { responsive: true }
+      options: chartOptions,
+      plugins: [ChartDataLabels]
     });
 
-    document.getElementById("countryBudgetModal").classList.remove("hidden");
+    const incomeList = document.getElementById("incomeList");
+    incomeList.innerHTML = incomeData.map(item => `
+      <li class="flex justify-between">
+        <span class="text-left">${item.label}</span>
+        <span class="text-green-400">${item.value.toLocaleString()}</span>
+      </li>`).join("");
+
+    const expenseList = document.getElementById("expenseList");
+    expenseList.innerHTML = expenseData.map(item => `
+      <li class="flex justify-between">
+        <span class="text-left">${item.label}</span>
+        <span class="text-red-400">${item.value.toLocaleString()}</span>
+      </li>`).join("");
+
+    modal.classList.remove("hidden");
+    modal.classList.add("opacity-0");
+    setTimeout(() => modal.classList.remove("opacity-0"), 10);
   }
   
-  document.getElementById("openBudgetButton").addEventListener("click", () => {
-  // Здесь можно получить данные из файла, из объекта страны и т.д.
-  // Примерные тестовые данные:
-  const incomeData = [
-    { label: "Налоги", value: 5000, color: "#4caf50" },
-    { label: "Торговля", value: 3000, color: "#2196f3" },
-    { label: "Гавани", value: 1000, color: "#00bcd4" },
-  ];
+  // Функция для загрузки данных бюджета страны
+function getCountryBudgetData(countryName) {
+  const fs = require('fs');
+  const path = require('path');
 
-  const expenseData = [
-    { label: "Армия", value: 4000, color: "#f44336" },
-    { label: "Инфраструктура", value: 2000, color: "#ff9800" },
-    { label: "Администрация", value: 1500, color: "#9c27b0" },
-  ];
+  const countryPath = path.join('data', 'countries', countryName, `${countryName}.json`);
+  const settingsPath = path.join('data', 'budget_settings.json');
 
-  showCountryBudgetModal(incomeData, expenseData);
+  // Загружаем настройки по умолчанию
+  let fallback = {
+    income: [],
+    expenses: []
+  };
+  if (!fs.existsSync(settingsPath)) {
+    fallback = {
+      income: [
+        { label: "Подоходный налог", value: 10000, color: "#4caf50" },
+        { label: "Корпоративный налог", value: 7000, color: "#81c784" }
+      ],
+      expenses: [
+        { label: "Здравоохранение", value: 8000, color: "#e57373" },
+        { label: "Образование", value: 6000, color: "#f06292" }
+      ]
+    };
+    fs.writeFileSync(settingsPath, JSON.stringify(fallback, null, 2), 'utf-8');
+  } else {
+    fallback = JSON.parse(fs.readFileSync(settingsPath, 'utf-8'));
+  }
+
+  // Если файл страны не найден — возвращаем копию fallback
+  if (!fs.existsSync(countryPath)) return JSON.parse(JSON.stringify(fallback));
+
+  const countryData = JSON.parse(fs.readFileSync(countryPath, 'utf-8'));
+
+  // Если budget отсутствует — создаем с нуля
+  if (!countryData.budget) {
+    countryData.budget = JSON.parse(JSON.stringify(fallback));
+  } else {
+    // Если есть — проверим, чего не хватает
+    const existingIncomeLabels = (countryData.budget.income || []).map(i => i.label);
+    const existingExpenseLabels = (countryData.budget.expenses || []).map(e => e.label);
+
+    // Добавим недостающие доходы
+    fallback.income.forEach(item => {
+      if (!existingIncomeLabels.includes(item.label)) {
+        if (!countryData.budget.income) countryData.budget.income = [];
+        countryData.budget.income.push(item);
+      }
+    });
+
+    // Добавим недостающие расходы
+    fallback.expenses.forEach(item => {
+      if (!existingExpenseLabels.includes(item.label)) {
+        if (!countryData.budget.expenses) countryData.budget.expenses = [];
+        countryData.budget.expenses.push(item);
+      }
+    });
+  }
+
+  // Сохраняем изменения обратно в файл страны
+  fs.writeFileSync(countryPath, JSON.stringify(countryData, null, 2), 'utf-8');
+
+  return countryData.budget;
+}
+
+// Кнопка загрузки данных страны
+document.getElementById("openBudgetButton").addEventListener("click", () => {
+  const state = loadGameState();
+  const countryName = state.current_country;
+
+  const budgetData = getCountryBudgetData(countryName);
+  showCountryBudgetModal(budgetData.income, budgetData.expenses);
 });
 
 });
